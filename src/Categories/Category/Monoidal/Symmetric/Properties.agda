@@ -19,7 +19,7 @@ open Symmetric SM
 
 -- Shorthands for the braiding
 
-open BraidedProperties braided public using (module Shorthands)
+open BraidedProperties braided public using (Obj-⊗-Comm-Monoid; module Shorthands)
 
 -- Extra properties of the braiding in a symmetric monoidal category
 

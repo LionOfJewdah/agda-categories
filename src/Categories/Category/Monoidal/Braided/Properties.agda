@@ -7,6 +7,8 @@ open import Categories.Category.Monoidal.Braided using (Braided)
 module Categories.Category.Monoidal.Braided.Properties
   {o ℓ e} {C : Category o ℓ e} {M : Monoidal C} (BM : Braided M) where
 
+open import Level using (_⊔_)
+open import Algebra.Bundles using (CommutativeMonoid; Monoid)
 open import Data.Product using (_,_)
 
 import Categories.Category.Construction.Core C as Core
@@ -22,7 +24,7 @@ open import Categories.NaturalTransformation.NaturalIsomorphism.Properties
 open Category C
 open Commutation C
 open Braided BM
-open MonoidalUtilities using (_⊗ᵢ_; unitorʳ-naturalIsomorphism)
+open MonoidalUtilities using (_⊗ᵢ_; Obj-⊗-Monoid; unitorʳ-naturalIsomorphism)
 open MonoidalUtilities.Shorthands
 open Core.Shorthands
 open Commutationᵢ
@@ -45,10 +47,24 @@ module Shorthands where
 
 open Shorthands
 
+-- The monoid of objects is commutative up to the braiding isomorphism.
+
+Obj-⊗-Comm-Monoid : CommutativeMonoid o (ℓ ⊔ e)
+Obj-⊗-Comm-Monoid = record
+  { Carrier = Obj
+  ; _≈_ = _≅_
+  ; _∙_ = _⊗₀_
+  ; ε   = unit
+  ; isCommutativeMonoid = record
+    { isMonoid = Monoid.isMonoid Obj-⊗-Monoid
+    ; comm     = λ X Y → σ {X , Y}
+    }
+  }
+
 private
 
   -- It's easier to prove the following lemma, which is the desired
-  -- coherence theorem moduolo application of the |-⊗ unit| functor.
+  -- coherence theorem modulo application of the |-⊗ unit| functor.
   -- Because |-⊗ unit| is equivalent to the identity functor, the
   -- lemma and the theorem are equivalent.
 
