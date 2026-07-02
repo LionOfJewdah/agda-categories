@@ -55,6 +55,9 @@ _⟩⊗⟨refl = ⊗-resp-≈ˡ
 ⊗-distrib-over-∘ : ((f ∘ h) ⊗₁ (g ∘ i)) ≈ ((f ⊗₁ g) ∘ (h ⊗₁ i))
 ⊗-distrib-over-∘ = homomorphism
 
+⊗-factor-over-∘ : ((f ⊗₁ g) ∘ (h ⊗₁ i)) ≈ ((f ∘ h) ⊗₁ (g ∘ i))
+⊗-factor-over-∘ = Equiv.sym ⊗-distrib-over-∘
+
 -- Parallel commutation
 
 parallel : ∀ {X₁ X₂ Y₁ Y₂ Z₁ Z₂ W₁ W₂}

@@ -12,7 +12,8 @@ open import Data.Product using (_,_; Σ; uncurry′)
 open Category C
 open M.Monoidal MC
 open import Categories.Category.Monoidal.Utilities MC
-import Categories.Category.Monoidal.Reasoning as MonR
+open import Categories.Category.Monoidal.Reasoning MC
+  using (_⟩⊗⟨_; ⊗-factor-over-∘)
 open import Categories.Category.Construction.Core C as Core using (Core)
 open import Categories.Category.Product using (Product)
 open import Categories.Functor using (Functor)
@@ -27,7 +28,7 @@ open import Categories.NaturalTransformation.NaturalIsomorphism.Properties
 private
   module C = Category C
   variable
-    A B : Obj
+    A B P Q R : Obj
 open Core.Shorthands
 
 monoidal-Op : M.Monoidal C.op
@@ -287,3 +288,41 @@ open Kelly's public using
   ; coherence₂; coherence-iso₂; coherence-inv₂
   ; coherence₃; coherence-iso₃; coherence-inv₃
   )
+
+open Shorthands
+
+private
+  id⊗α-iso : (id {A} ⊗₁ α⇐ {P} {Q} {R}) ∘ (id ⊗₁ α⇒) ≈ id
+  id⊗α-iso = Equiv.trans ⊗-factor-over-∘
+    (Equiv.trans (identity² ⟩⊗⟨ associator.isoˡ) ⊗.identity)
+
+assoc-shuffle
+  : α⇒ {A ⊗₀ P} {Q} {R} ∘ (α⇐ {A} {P} {Q} ⊗₁ id) ∘ α⇐ {A} {P ⊗₀ Q} {R}
+    ≈ α⇐ {A} {P} {Q ⊗₀ R} ∘ (id ⊗₁ α⇒ {P} {Q} {R})
+assoc-shuffle = begin
+  α⇒ ∘ (α⇐ ⊗₁ id) ∘ α⇐                                  ≈⟨ refl⟩∘⟨ Cancellers.insertʳ id⊗α-iso ⟩
+  α⇒ ∘ (((α⇐ ⊗₁ id) ∘ α⇐) ∘ (id ⊗₁ α⇐)) ∘ (id ⊗₁ α⇒)  ≈⟨ refl⟩∘⟨ pentagon-inv ⟩∘⟨refl ⟩
+  α⇒ ∘ (α⇐ ∘ α⇐) ∘ (id ⊗₁ α⇒)                          ≈⟨ refl⟩∘⟨ assoc ⟩
+  α⇒ ∘ α⇐ ∘ α⇐ ∘ (id ⊗₁ α⇒)                            ≈⟨ Cancellers.cancelˡ associator.isoʳ ⟩
+  α⇐ ∘ (id ⊗₁ α⇒)                                      ∎
+  where
+    open C.HomReasoning
+    open MR C
+
+unitorˡ-assoc-absorb : α⇒ ∘ (λ⇐ {A} ⊗₁ id {B}) ≈ λ⇐
+unitorˡ-assoc-absorb = begin
+  α⇒ ∘ (λ⇐ ⊗₁ id) ≈⟨ refl⟩∘⟨ Equiv.sym coherence-inv₁ ⟩
+  α⇒ ∘ (α⇐ ∘ λ⇐) ≈⟨ Cancellers.cancelˡ associator.isoʳ ⟩
+  λ⇐ ∎
+  where
+    open C.HomReasoning
+    open MR C
+
+unitorʳ-assoc-absorb : ρ⇒ ∘ α⇐ {A} {B} {unit} ≈ id ⊗₁ ρ⇒
+unitorʳ-assoc-absorb = begin
+  ρ⇒ ∘ α⇐                    ≈˘⟨ coherence₂ ⟩∘⟨refl ⟩
+  (id ⊗₁ ρ⇒ ∘ α⇒) ∘ α⇐       ≈⟨ Cancellers.cancelʳ associator.isoʳ ⟩
+  id ⊗₁ ρ⇒                   ∎
+  where
+    open C.HomReasoning
+    open MR C
