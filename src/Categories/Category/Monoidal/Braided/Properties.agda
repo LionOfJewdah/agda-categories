@@ -43,6 +43,10 @@ module Shorthands where
   σ⇐ : ∀ {X Y} → Y ⊗₀ X ⇒ X ⊗₀ Y
   σ⇐ {X} {Y} = braiding.⇐.η (X , Y)
 
+  σ-commute : ∀ {X Y Z W} {f : X ⇒ Y} {g : Z ⇒ W} →
+              σ⇒ ∘ (f ⊗₁ g) ≈ (g ⊗₁ f) ∘ σ⇒
+  σ-commute {f = f} {g} = braiding.⇒.commute (f , g)
+
   σ = braiding.FX≅GX
 
 open Shorthands

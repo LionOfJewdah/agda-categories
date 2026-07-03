@@ -13,8 +13,16 @@ module Categories.Tactic.Monoidal where
 
 open import Function using (_⟨_⟩_)
 
+open import Categories.Category using (Category)
+open import Categories.Category.Monoidal using (Monoidal)
+
+open import Axiom.UniquenessOfIdentityProofs using (module Decidable⇒UIP)
+open import Data.Fin.Base using (Fin)
+open import Data.Fin.Patterns using (0F; 1F; 2F; 3F; 4F)
+open import Data.Fin.Properties using () renaming (_≟_ to _≟Fin_)
 open import Data.Maybe using (Maybe; just; nothing; maybe)
 open import Data.List using (List; []; _∷_)
+open import Data.List.Properties using () renaming (≡-dec to ≡-dec-list)
 open import Data.Product using (_×_; _,_)
 open import Relation.Binary.PropositionalEquality using (refl)
 
@@ -25,6 +33,76 @@ open import Reflection.TCM.Syntax
 
 open import Categories.Tactic.Monoidal.Core public
 open import Categories.Tactic.Monoidal.Coherence public
+
+import Categories.Tactic.Monoidal.Core as Core
+open import Categories.Tactic.Monoidal.Free using (module Free)
+import Categories.Tactic.Monoidal.Coherence as Coherence
+
+module Finite
+  {o ℓ e}
+  {C : Category o ℓ e}
+  (M : Monoidal C)
+  where
+
+  open Category C
+
+  module SolverFor {n} (atom : Fin n → Obj) where
+    module Sem = Core M atom
+    open Sem public using (⟦_⟧₀; ⟦_⟧₁)
+    open Free (Fin n) public
+      renaming
+        ( _⇒_  to _⇒ᶠ_
+        ; _∘_  to _∘ᶠ_
+        ; _⊗₁_ to _⊗ᶠ_
+        ; _⊗_  to _⊗ᵒ_
+        ; α⇒   to α⇒ᶠ
+        ; α⇐   to α⇐ᶠ
+        ; λ⇒   to λ⇒ᶠ
+        ; λ⇐   to λ⇐ᶠ
+        ; ρ⇒   to ρ⇒ᶠ
+        ; ρ⇐   to ρ⇐ᶠ
+        )
+
+    private
+      module Coherence′ = Coherence.WithUIP M atom
+        (Decidable⇒UIP.≡-irrelevant (≡-dec-list _≟Fin_))
+
+    solveᶠ : ∀ {X Y} (f g : X ⇒ᶠ Y) → Sem.⟦_⟧₁ f ≈ Sem.⟦_⟧₁ g
+    solveᶠ = Coherence′.coherence-UIP
+
+  module Solver (A B C D E : Obj) where
+    atom : Fin 5 → Obj
+    atom 0F = A
+    atom 1F = B
+    atom 2F = C
+    atom 3F = D
+    atom 4F = E
+
+    open SolverFor atom public
+      renaming
+        ( _⇒ᶠ_  to _⇒f_
+        ; _∘ᶠ_  to _∘f_
+        ; _⊗ᶠ_  to _⊗f_
+        ; _⊗ᵒ_  to _⊗o_
+        ; α⇒ᶠ   to fα⇒
+        ; α⇐ᶠ   to fα⇐
+        ; λ⇒ᶠ   to fλ⇒
+        ; λ⇐ᶠ   to fλ⇐
+        ; ρ⇒ᶠ   to fρ⇒
+        ; ρ⇐ᶠ   to fρ⇐
+        ; solveᶠ to solve′
+        )
+
+    x0 x1 x2 x3 x4 : Ob
+    x0 = ‹ 0F ›
+    x1 = ‹ 1F ›
+    x2 = ‹ 2F ›
+    x3 = ‹ 3F ›
+    x4 = ‹ 4F ›
+
+    solve : (X : Ob) {Y : Ob} (f g : X ⇒f Y)
+      → SolverFor.⟦_⟧₁ atom f ≈ SolverFor.⟦_⟧₁ atom g
+    solve _ = solve′
 
 private
   getArgs : Term → Maybe (Term × Term)
