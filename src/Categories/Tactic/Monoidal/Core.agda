@@ -40,10 +40,10 @@ open import Categories.Morphism C using (_≅_; module ≅)
 open import Categories.Category.Monoidal.Utilities M using (_⊗ᵢ_; Obj-⊗-Monoid; module Shorthands)
 open import Categories.Morphism.Reasoning C using (module Cancellers)
 open import Categories.Category.Monoidal.Reasoning M
-  using (⊗-factor-over-∘; _⟩⊗⟨_)
+  using (⊗-cancel)
 
 open Category C renaming (_⇒_ to _⇒ᶜ_; _∘_ to _∘ᶜ_; id to idᶜ)
-open Monoidal M using (_⊗₀_; unit; associator; unitorˡ; unitorʳ; module ⊗)
+open Monoidal M using (_⊗₀_; unit; associator; unitorˡ; unitorʳ)
   renaming (_⊗₁_ to _⊗₁ᶜ_)
 open Shorthands
   renaming
@@ -211,9 +211,7 @@ invert-isoˡ : (f : X ⇒ Y) → ⟦ invert f ⟧₁ ∘ᶜ ⟦ f ⟧₁ ≈ id�
 invert-isoˡ idₘ      = identity²
 invert-isoˡ (g ∘ f)  =
   Equiv.trans (Cancellers.cancelInner (invert-isoˡ g)) (invert-isoˡ f)
-invert-isoˡ (f ⊗₁ g) =
-  Equiv.trans ⊗-factor-over-∘
-    (Equiv.trans (invert-isoˡ f ⟩⊗⟨ invert-isoˡ g) ⊗.identity)
+invert-isoˡ (f ⊗₁ g) = ⊗-cancel (invert-isoˡ f) (invert-isoˡ g)
 invert-isoˡ α⇒       = associator.isoˡ
 invert-isoˡ α⇐       = associator.isoʳ
 invert-isoˡ λ⇒       = unitorˡ.isoˡ
@@ -225,9 +223,7 @@ invert-isoʳ : (f : X ⇒ Y) → ⟦ f ⟧₁ ∘ᶜ ⟦ invert f ⟧₁ ≈ id�
 invert-isoʳ idₘ      = identity²
 invert-isoʳ (g ∘ f)  =
   Equiv.trans (Cancellers.cancelInner (invert-isoʳ f)) (invert-isoʳ g)
-invert-isoʳ (f ⊗₁ g) =
-  Equiv.trans ⊗-factor-over-∘
-    (Equiv.trans (invert-isoʳ f ⟩⊗⟨ invert-isoʳ g) ⊗.identity)
+invert-isoʳ (f ⊗₁ g) = ⊗-cancel (invert-isoʳ f) (invert-isoʳ g)
 invert-isoʳ α⇒       = associator.isoʳ
 invert-isoʳ α⇐       = associator.isoˡ
 invert-isoʳ λ⇒       = unitorˡ.isoʳ

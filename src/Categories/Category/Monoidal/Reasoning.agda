@@ -58,6 +58,14 @@ _⟩⊗⟨refl = ⊗-resp-≈ˡ
 ⊗-factor-over-∘ : ((f ⊗₁ g) ∘ (h ⊗₁ i)) ≈ ((f ∘ h) ⊗₁ (g ∘ i))
 ⊗-factor-over-∘ = Equiv.sym ⊗-distrib-over-∘
 
+⊗-cancel : ∀ {X₁ Y₁ X₂ Y₂}
+             {f₁ : X₁ ⇒ Y₁} {f₂ : Y₁ ⇒ X₁}
+             {g₁ : X₂ ⇒ Y₂} {g₂ : Y₂ ⇒ X₂}
+           → f₁ ∘ f₂ ≈ id → g₁ ∘ g₂ ≈ id
+           → (f₁ ⊗₁ g₁) ∘ (f₂ ⊗₁ g₂) ≈ id
+⊗-cancel f-inv g-inv =
+  ⊗-factor-over-∘ ○ (f-inv ⟩⊗⟨ g-inv) ○ Monoidal.⊗.identity M
+
 -- Parallel commutation
 
 parallel : ∀ {X₁ X₂ Y₁ Y₂ Z₁ Z₂ W₁ W₂}
