@@ -43,6 +43,57 @@ open Core.Shorthands            -- for idᵢ, _∘ᵢ_, ...
 open Shorthands                 -- for λ⇒, ρ⇒, α⇒, ...
 open BraidedProps.Shorthands B  -- for σ⇒, ...
 
+-- Adjacent three-wire swaps induced by the braiding.
+
+swapˡ : X ⊗₀ (Y ⊗₀ Z) ⇒ Y ⊗₀ (X ⊗₀ Z)
+swapˡ = α⇒ ∘ σ⇒ ⊗₁ id ∘ α⇐
+
+private
+  swapˡ-hexagon₂ :
+    (α⇐ ∘ σ⇒ {X ⊗₀ Y} {Z}) ∘ α⇐
+    ≈ (σ⇒ {X} {Z} ⊗₁ id ∘ α⇐) ∘ id ⊗₁ σ⇒ {Y} {Z}
+  swapˡ-hexagon₂ = ⟺ hexagon₂
+
+swapˡ-hexagon : σ⇒ {X ⊗₀ Y} {Z} ∘ α⇐ {X} {Y} {Z}
+                ≈ swapˡ {X} {Z} {Y} ∘ id ⊗₁ σ⇒ {Y} {Z}
+swapˡ-hexagon {X} {Y} {Z} = begin
+  σ⇒ ∘ α⇐
+    ≈˘⟨ cancelˡ (α.isoʳ {Z} {X} {Y}) ⟩
+  α⇒ ∘ (α⇐ ∘ (σ⇒ ∘ α⇐))
+    ≈⟨ refl⟩∘⟨ sym-assoc ⟩
+  α⇒ ∘ ((α⇐ ∘ σ⇒ {X ⊗₀ Y} {Z}) ∘ α⇐)
+    ≈⟨ refl⟩∘⟨ swapˡ-hexagon₂ {X} {Y} {Z} ⟩
+  α⇒ ∘ ((σ⇒ {X} {Z} ⊗₁ id ∘ α⇐)
+    ∘ id ⊗₁ σ⇒ {Y} {Z})
+    ≈⟨ sym-assoc ⟩
+  swapˡ ∘ id ⊗₁ σ⇒
+    ∎
+
+swapˡ-natural : swapˡ ∘ g ⊗₁ (h ⊗₁ i) ≈ h ⊗₁ (g ⊗₁ i) ∘ swapˡ
+swapˡ-natural {g = g} {h = h} {i = i} = begin
+  (α⇒ ∘ σ⇒ ⊗₁ id ∘ α⇐) ∘ g ⊗₁ (h ⊗₁ i)
+    ≈⟨ pullʳ (pullʳ assoc-commute-to) ⟩
+  α⇒ ∘ σ⇒ ⊗₁ id ∘ (g ⊗₁ h) ⊗₁ i ∘ α⇐
+    ≈⟨ refl⟩∘⟨ extendʳ (parallel (braiding.⇒.commute _) id-comm-sym) ⟩
+  α⇒ ∘ (h ⊗₁ g) ⊗₁ i ∘ σ⇒ ⊗₁ id ∘ α⇐
+    ≈⟨ extendʳ assoc-commute-from ⟩
+  h ⊗₁ (g ⊗₁ i) ∘ α⇒ ∘ σ⇒ ⊗₁ id ∘ α⇐
+    ∎
+
+swapʳ : (X ⊗₀ Y) ⊗₀ Z ⇒ (X ⊗₀ Z) ⊗₀ Y
+swapʳ = α⇐ ∘ id ⊗₁ σ⇒ ∘ α⇒
+
+swapʳ-natural : swapʳ ∘ (g ⊗₁ h) ⊗₁ i ≈ (g ⊗₁ i) ⊗₁ h ∘ swapʳ
+swapʳ-natural {g = g} {h = h} {i = i} = begin
+  (α⇐ ∘ id ⊗₁ σ⇒ ∘ α⇒) ∘ (g ⊗₁ h) ⊗₁ i
+    ≈⟨ pullʳ (pullʳ assoc-commute-from) ⟩
+  α⇐ ∘ id ⊗₁ σ⇒ ∘ g ⊗₁ (h ⊗₁ i) ∘ α⇒
+    ≈⟨ refl⟩∘⟨ extendʳ (parallel id-comm-sym (braiding.⇒.commute _)) ⟩
+  α⇐ ∘ g ⊗₁ (i ⊗₁ h) ∘ id ⊗₁ σ⇒ ∘ α⇒
+    ≈⟨ extendʳ assoc-commute-to ⟩
+  (g ⊗₁ i) ⊗₁ h ∘ α⇐ ∘ id ⊗₁ σ⇒ ∘ α⇒
+    ∎
+
 -- The "four middle interchange" for braided tensor products.
 
 swapInner : (W ⊗₀ X) ⊗₀ (Y ⊗₀ Z) ≅ (W ⊗₀ Y) ⊗₀ (X ⊗₀ Z)
@@ -53,23 +104,10 @@ private
   i⇒ = swapInner.from
   i⇐ = swapInner.to
 
--- to shorten things, it is convenient to name some items that recur
--- swapˡ is the inner part of 'swapInner'
-private
-  swapˡ : X ⊗₀ (Y ⊗₀ Z) ⇒ Y ⊗₀ (X ⊗₀ Z)
-  swapˡ = α⇒ ∘ σ⇒ ⊗₁ id ∘ α⇐
-
-  swapˡ-act :  swapˡ ∘ g ⊗₁ (h ⊗₁ i) ≈ h ⊗₁ (g ⊗₁ i) ∘ swapˡ
-  swapˡ-act {g = g} {h = h} {i = i} = begin
-    (α⇒ ∘ σ⇒ ⊗₁ id ∘ α⇐) ∘ g ⊗₁ (h ⊗₁ i)    ≈⟨ pullʳ (pullʳ assoc-commute-to) ⟩
-    α⇒ ∘ σ⇒ ⊗₁ id ∘ (g ⊗₁ h) ⊗₁ i ∘ α⇐      ≈⟨ refl⟩∘⟨ extendʳ (parallel (braiding.⇒.commute _) id-comm-sym) ⟩
-    α⇒ ∘ (h ⊗₁ g) ⊗₁ i ∘ σ⇒ ⊗₁ id ∘ α⇐      ≈⟨ extendʳ assoc-commute-from ⟩
-    h ⊗₁ (g ⊗₁ i) ∘ α⇒ ∘ σ⇒ ⊗₁ id ∘ α⇐      ∎
-
 swapInner-natural : i⇒ ∘ (f ⊗₁ g) ⊗₁ (h ⊗₁ i) ≈ (f ⊗₁ h) ⊗₁ (g ⊗₁ i) ∘ i⇒
 swapInner-natural {f = f} {g = g} {h = h} {i = i} = begin
     (α⇐ ∘ id ⊗₁ swapˡ ∘ α⇒) ∘ (f ⊗₁ g) ⊗₁ (h ⊗₁ i)  ≈⟨ pullʳ (pullʳ assoc-commute-from) ⟩
-    α⇐ ∘ id ⊗₁ swapˡ ∘ f ⊗₁ g ⊗₁ (h ⊗₁ i) ∘ α⇒      ≈⟨ refl⟩∘⟨ extendʳ (parallel id-comm-sym swapˡ-act) ⟩
+    α⇐ ∘ id ⊗₁ swapˡ ∘ f ⊗₁ g ⊗₁ (h ⊗₁ i) ∘ α⇒      ≈⟨ refl⟩∘⟨ extendʳ (parallel id-comm-sym swapˡ-natural) ⟩
     α⇐ ∘ f ⊗₁ h ⊗₁ (g ⊗₁ i) ∘ id ⊗₁ swapˡ ∘ α⇒      ≈⟨ extendʳ assoc-commute-to ⟩
     (f ⊗₁ h) ⊗₁ (g ⊗₁ i) ∘ α⇐ ∘ id ⊗₁ swapˡ ∘ α⇒    ∎
 
@@ -84,15 +122,15 @@ swapInner-naturalIsomorphism = niHelper (record
 -- Another version of the interchange that associates differently.
 --
 -- Why are there two versions and what's the difference? The domain
--- (X₁ ⊗ X₂) ⊗₀ (Y₁ ⊗ Y₂) and codomain (X₁ ⊗ Y₁) ⊗₀ (X₁ ⊗ Y₂) of the
+-- (X₁ ⊗ X₂) ⊗₀ (Y₁ ⊗ Y₂) and codomain (X₁ ⊗ Y₁) ⊗₀ (X₂ ⊗ Y₂) of the
 -- interchange map are perfectly symmetric/balanced. But in order to
 -- apply the braiding to the middle X₂ and Y₁, we need to
 -- re-associate and that breaks the symmetry. We must first
 -- re-associate the whole expression in one direction and then the
 -- larger subterm in the other. This can be done in two ways,
--- associate to the right first, then to the left, resulting in X₁ ⊗
--- ((Y₂ ⊗₀ X₁) ⊗ Y₂), or vice versa, resulting in (X₁ ⊗ (Y₂ ⊗₀ X₁))
--- ⊗ Y₂. The choice is arbitrary and results in two distinct
+-- associate to the right first, then to the left, resulting in W ⊗₀
+-- (Y ⊗₀ (X ⊗₀ Z)), or vice versa, resulting in ((W ⊗₀ Y) ⊗₀ X)
+-- ⊗₀ Z. The choice is arbitrary and results in two distinct
 -- interchange maps that behave the same way (as witnessed by
 -- swapInner-coherent below).
 --
@@ -109,9 +147,6 @@ module swapInner′ {W X Y Z} = _≅_ (swapInner′ {W} {X} {Y} {Z})
 private
   j⇒ = swapInner′.from
   j⇐ = swapInner′.to
-
-  swapʳ : (X ⊗₀ Y) ⊗₀ Z ⇒ (X ⊗₀ Z) ⊗₀ Y
-  swapʳ = α⇐ ∘ id ⊗₁ σ⇒ ∘ α⇒
 
 -- Derived coherence laws.
 
@@ -363,7 +398,7 @@ swapInner-unitʳ = begin
       id ⊗₁ (id ⊗₁ λ⇒) ∘ α⇒                                             ≈˘⟨ assoc-commute-from ⟩
       α⇒ ∘ (id ⊗₁ id) ⊗₁ λ⇒                                             ≈⟨ refl⟩∘⟨ ⊗.identity ⟩⊗⟨refl ⟩
       α⇒ ∘ id ⊗₁ λ⇒                                                     ∎)) ⟩∘⟨refl ⟩
-    (id ⊗₁ ρ⇒ ∘ α⇒ ∘ id ⊗₁ λ⇒) ∘ id ⊗₁ λ⇐                    ≈⟨ (sym-assoc ○ (Kelly's.coherence₂ M ⟩∘⟨refl )) ⟩∘⟨refl ⟩
+    (id ⊗₁ ρ⇒ ∘ α⇒ ∘ id ⊗₁ λ⇒) ∘ id ⊗₁ λ⇐                    ≈⟨ (sym-assoc ○ (Kelly's.coherence₂ M ⟩∘⟨refl)) ⟩∘⟨refl ⟩
     (ρ⇒ ∘ id ⊗₁ λ⇒) ∘ id ⊗₁ λ⇐                                ≈⟨ cancelʳ (_≅_.isoʳ (idᵢ ⊗ᵢ unitorˡ)) ⟩
     ρ⇒                                                         ∎
 

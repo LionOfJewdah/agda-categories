@@ -25,7 +25,7 @@ open import Categories.Morphism.IsoEquiv C using (to-unique)
 open import Categories.Morphism.Reasoning C
   using (elim-center; pushˡ; pullʳ; cancelInner; switch-fromtoˡ)
 
-open Category C using (Obj; _⇒_; _∘_; id; sym-assoc; ∘-resp-≈ʳ; module Equiv)
+open Category C
 open Commutation C
 open MonoidalReasoning
 open MonoidalUtilities using (_⊗ᵢ_)
@@ -43,6 +43,24 @@ private
 private
   i⇒ = swapInner.from
   i⇐ = swapInner.to
+
+private
+  σ-cancelʳ : ∀ {X Y} →
+    (σ⇒ {Y} {X} ∘ σ⇒ {X} {Y}) ≈ id {X ⊗₀ Y}
+  σ-cancelʳ {X} {Y} = commutative {X = Y} {Y = X}
+
+  σ⊗σ-cancelʳ : ∀ {W X Y Z} →
+    ((σ⇒ {W} {X} ⊗₁ σ⇒ {Z} {Y})
+      ∘ (id {W ⊗₀ X} ⊗₁ σ⇒ {Y} {Z}))
+    ≈ σ⇒ {W} {X} ⊗₁ id {Y ⊗₀ Z}
+  σ⊗σ-cancelʳ {W} {X} {Y} {Z} = begin
+    (σ⇒ {W} {X} ⊗₁ σ⇒ {Z} {Y})
+      ∘ (id {W ⊗₀ X} ⊗₁ σ⇒ {Y} {Z})
+      ≈˘⟨ ⊗-distrib-over-∘ ⟩
+    (σ⇒ {W} {X} ∘ id {W ⊗₀ X}) ⊗₁ (σ⇒ {Z} {Y} ∘ σ⇒ {Y} {Z})
+      ≈⟨ identityʳ ⟩⊗⟨ σ-cancelʳ {Y} {Z} ⟩
+    σ⇒ {W} {X} ⊗₁ id {Y ⊗₀ Z}
+      ∎
 
 swapInner-commutative : [ (X₁ ⊗₀ X₂) ⊗₀ (Y₁ ⊗₀ Y₂) ⇒
                           (X₁ ⊗₀ X₂) ⊗₀ (Y₁ ⊗₀ Y₂) ]⟨
@@ -83,3 +101,38 @@ swapInner-braiding′ : [ (W ⊗₀ X) ⊗₀ (Y ⊗₀ Z) ⇒ (Y ⊗₀ W) ⊗�
                         i⇒
                       ⟩
 swapInner-braiding′ = switch-fromtoˡ swapInner-iso swapInner-braiding
+
+swapInner-braidˡ : ∀ {W X Y Z} →
+  swapInner.from {X} {W} {Y} {Z} ∘ (σ⇒ {W} {X} ⊗₁ id {Y ⊗₀ Z})
+  ≈ σ⇒ {W ⊗₀ Z} {X ⊗₀ Y}
+      ∘ swapInner.from {W} {X} {Z} {Y}
+      ∘ (id {W ⊗₀ X} ⊗₁ σ⇒ {Y} {Z})
+swapInner-braidˡ {W} {X} {Y} {Z} = ⟺ (begin
+  σ⇒ {W ⊗₀ Z} {X ⊗₀ Y}
+    ∘ swapInner.from {W} {X} {Z} {Y}
+    ∘ (id {W ⊗₀ X} ⊗₁ σ⇒ {Y} {Z})
+    ≈˘⟨ assoc ⟩
+  (σ⇒ {W ⊗₀ Z} {X ⊗₀ Y}
+    ∘ swapInner.from {W} {X} {Z} {Y})
+    ∘ (id {W ⊗₀ X} ⊗₁ σ⇒ {Y} {Z})
+    ≈⟨ ((⟺ (swapInner-braiding {W = W} {X = Z} {Y = X} {Z = Y}))
+        ⟩∘⟨refl) ⟩∘⟨refl ⟩
+  ((swapInner.from {X} {W} {Y} {Z}
+    ∘ (σ⇒ {W} {X} ⊗₁ σ⇒ {Z} {Y})
+    ∘ swapInner.from {W} {Z} {X} {Y})
+    ∘ swapInner.from {W} {X} {Z} {Y})
+    ∘ (id {W ⊗₀ X} ⊗₁ σ⇒ {Y} {Z})
+    ≈⟨ ((sym-assoc ⟩∘⟨refl)
+        ○ pullʳ (swapInner-commutative {X₁ = W} {X₂ = X} {Y₁ = Z} {Y₂ = Y})
+        ○ identityʳ) ⟩∘⟨refl ⟩
+  (swapInner.from {X} {W} {Y} {Z}
+    ∘ (σ⇒ {W} {X} ⊗₁ σ⇒ {Z} {Y}))
+    ∘ (id {W ⊗₀ X} ⊗₁ σ⇒ {Y} {Z})
+    ≈⟨ assoc ⟩
+  swapInner.from {X} {W} {Y} {Z}
+    ∘ ((σ⇒ {W} {X} ⊗₁ σ⇒ {Z} {Y})
+      ∘ (id {W ⊗₀ X} ⊗₁ σ⇒ {Y} {Z}))
+    ≈⟨ refl⟩∘⟨ σ⊗σ-cancelʳ {W} {X} {Y} {Z} ⟩
+  swapInner.from {X} {W} {Y} {Z}
+    ∘ (σ⇒ {W} {X} ⊗₁ id {Y ⊗₀ Z})
+    ∎)
