@@ -62,7 +62,17 @@ private
   -- Merge two identity-on-the-left tensors.
   ⊗id-∘ : ∀ {A B C D} {f : C ⇒ D} {g : B ⇒ C}
     → (id {A} ⊗₁ f) ∘ (id ⊗₁ g) ≈ id ⊗₁ (f ∘ g)
-  ⊗id-∘ = Equiv.trans ⊗-factor-over-∘ (identity² ⟩⊗⟨ Equiv.refl)
+  ⊗id-∘ {f = f} {g} = begin
+    (id ⊗₁ f) ∘ (id ⊗₁ g)  ≈˘⟨ ⊗-distrib-over-∘ ⟩
+    (id ∘ id) ⊗₁ (f ∘ g)   ≈⟨ identity² ⟩⊗⟨ Equiv.refl ⟩
+    id ⊗₁ (f ∘ g)          ∎
+
+  ⊗idˡ-∘ : ∀ {A B C D E} {f : A ⇒ B} {g : D ⇒ E} {h : C ⇒ D}
+    → (f ⊗₁ g) ∘ (id ⊗₁ h) ≈ f ⊗₁ (g ∘ h)
+  ⊗idˡ-∘ {f = f} {g} {h} = begin
+    (f ⊗₁ g) ∘ (id ⊗₁ h)  ≈˘⟨ ⊗-distrib-over-∘ ⟩
+    (f ∘ id) ⊗₁ (g ∘ h)   ≈⟨ identityʳ ⟩⊗⟨ Equiv.refl ⟩
+    f ⊗₁ (g ∘ h)          ∎
 
 -- `μ⇒ x y` is the forward direction of the homomorphism's multiplicativity
 -- witness: it merges two normalized products.
@@ -171,21 +181,28 @@ substₑ-∘ refl q = Equiv.sym identityʳ
 -- naturality of `μ⇒` along coercions
 μ-natural : {x x' y y' : List Atom} (p : x ≡ x') (q : y ≡ y')
   → (substₑ p ⊗₁ substₑ q) ∘ μ⇒ x y ≈ μ⇒ x' y' ∘ substₑ (cong₂ _++_ p q)
-μ-natural refl refl =
-  Equiv.trans (⊗.identity ⟩∘⟨refl)
-    (Equiv.trans identityˡ (Equiv.sym identityʳ))
+μ-natural {x = x} {y = y} refl refl = begin
+  (id ⊗₁ id) ∘ μ⇒ x y  ≈⟨ ⊗.identity ⟩∘⟨refl ⟩
+  id ∘ μ⇒ x y           ≈⟨ identityˡ ⟩
+  μ⇒ x y                ≈˘⟨ identityʳ ⟩
+  μ⇒ x y ∘ id           ∎
 
 -- right-unit coherence of the homomorphism (the ρ analogue of `μ-assoc`)
 μ-unitʳ : (x : List Atom)
   → ρ⇒ ∘ μ⇒ x [] ≈ substₑ (++-identityʳ x)
-μ-unitʳ [] = Equiv.trans (Equiv.sym coherence₃ ⟩∘⟨refl) unitorˡ.isoʳ
+μ-unitʳ [] = begin
+  ρ⇒ ∘ λ⇐  ≈˘⟨ coherence₃ ⟩∘⟨refl ⟩
+  λ⇒ ∘ λ⇐  ≈⟨ unitorˡ.isoʳ ⟩
+  id       ∎
 μ-unitʳ (b ∷ bs) = begin
   ρ⇒ ∘ (α⇐ ∘ (id ⊗₁ μ⇒ bs []))
     ≈⟨ sym-assoc ⟩
   (ρ⇒ ∘ α⇐) ∘ (id ⊗₁ μ⇒ bs [])
     ≈⟨ absorb-ρ ⟩∘⟨refl ⟩
   (id ⊗₁ ρ⇒) ∘ (id ⊗₁ μ⇒ bs [])
-    ≈⟨ Equiv.trans ⊗-factor-over-∘ (identity² ⟩⊗⟨ μ-unitʳ bs) ⟩
+    ≈˘⟨ ⊗-distrib-over-∘ ⟩
+  (id ∘ id) ⊗₁ (ρ⇒ ∘ μ⇒ bs [])
+    ≈⟨ identity² ⟩⊗⟨ μ-unitʳ bs ⟩
   id ⊗₁ substₑ p
     ≈˘⟨ substₑ-cons p ⟩
   substₑ p⁺
@@ -231,7 +248,7 @@ private
     ((κ⁻¹ A ⊗₁ (κ⁻¹ B ⊗₁ κ⁻¹ C)) ∘ ((id ⊗₁ μₙ B C) ∘ μₙ A (B ⊗ C))) ∘ assocₑ A B C
       ≈⟨ sym-assoc ⟩∘⟨refl ⟩
     (((κ⁻¹ A ⊗₁ (κ⁻¹ B ⊗₁ κ⁻¹ C)) ∘ (id ⊗₁ μₙ B C)) ∘ μₙ A (B ⊗ C)) ∘ assocₑ A B C
-      ≈⟨ (Equiv.trans ⊗-factor-over-∘ (identityʳ ⟩⊗⟨ Equiv.refl)) ⟩∘⟨refl ⟩∘⟨refl ⟩
+      ≈⟨ ⊗idˡ-∘ ⟩∘⟨refl ⟩∘⟨refl ⟩
     ((κ⁻¹ A ⊗₁ ((κ⁻¹ B ⊗₁ κ⁻¹ C) ∘ μₙ B C)) ∘ μₙ A (B ⊗ C)) ∘ assocₑ A B C
       ∎
 
@@ -253,7 +270,10 @@ private
 -- co-strictifying equals co-strictifying and then coercing along the (equal)
 -- object normal forms.
 κ⁻¹-natural : ∀ {X Y} (f : X ⊸ Y) → ⟦ f ⟧₁ ∘ κ⁻¹ X ≈ κ⁻¹ Y ∘ substₑ (⇒⇒nf f)
-κ⁻¹-natural idₘ = Equiv.trans identityˡ (Equiv.sym identityʳ)
+κ⁻¹-natural {X} idₘ = begin
+  id ∘ κ⁻¹ X  ≈⟨ identityˡ ⟩
+  κ⁻¹ X       ≈˘⟨ identityʳ ⟩
+  κ⁻¹ X ∘ id  ∎
 κ⁻¹-natural (_⊚_ {X} {Y} {Z} g f) = begin
   (⟦ g ⟧₁ ∘ ⟦ f ⟧₁) ∘ κ⁻¹ X              ≈⟨ assoc ⟩
   ⟦ g ⟧₁ ∘ (⟦ f ⟧₁ ∘ κ⁻¹ X)              ≈⟨ refl⟩∘⟨ κ⁻¹-natural f ⟩
@@ -267,7 +287,7 @@ private
     q = ⇒⇒nf g
 κ⁻¹-natural (_⊗ˢ_ {X} {Y} {Z} {W} f g) = begin
   (⟦ f ⟧₁ ⊗₁ ⟦ g ⟧₁) ∘ ((κ⁻¹ X ⊗₁ κ⁻¹ Z) ∘ μₙ X Z)          ≈⟨ sym-assoc ⟩
-  ((⟦ f ⟧₁ ⊗₁ ⟦ g ⟧₁) ∘ (κ⁻¹ X ⊗₁ κ⁻¹ Z)) ∘ μₙ X Z          ≈⟨ ⊗-factor-over-∘ ⟩∘⟨refl ⟩
+  ((⟦ f ⟧₁ ⊗₁ ⟦ g ⟧₁) ∘ (κ⁻¹ X ⊗₁ κ⁻¹ Z)) ∘ μₙ X Z          ≈˘⟨ ⊗-distrib-over-∘ ⟩∘⟨refl ⟩
   ((⟦ f ⟧₁ ∘ κ⁻¹ X) ⊗₁ (⟦ g ⟧₁ ∘ κ⁻¹ Z)) ∘ μₙ X Z           ≈⟨ (κ⁻¹-natural f ⟩⊗⟨ κ⁻¹-natural g) ⟩∘⟨refl ⟩
   ((κ⁻¹ Y ∘ substₑ p) ⊗₁ (κ⁻¹ W ∘ substₑ q)) ∘ μₙ X Z ≈⟨ ⊗-distrib-over-∘ ⟩∘⟨refl ⟩
   ((κ⁻¹ Y ⊗₁ κ⁻¹ W) ∘ (substₑ p ⊗₁ substₑ q)) ∘ μₙ X Z ≈⟨ assoc ⟩
@@ -324,8 +344,11 @@ loop-trivial-from {X} h loop = begin
   ⟦ h ⟧₁ ∘ id                     ≈˘⟨ refl⟩∘⟨ _≅_.isoˡ (strictify X) ⟩
   ⟦ h ⟧₁ ∘ (κ⁻¹ X ∘ _≅_.from (strictify X))  ≈⟨ sym-assoc ⟩
   (⟦ h ⟧₁ ∘ κ⁻¹ X) ∘ _≅_.from (strictify X)
-    ≈⟨ (Equiv.trans (κ⁻¹-natural h)
-         (Equiv.trans (refl⟩∘⟨ loop) identityʳ)) ⟩∘⟨refl ⟩
+    ≈⟨ κ⁻¹-natural h ⟩∘⟨refl ⟩
+  (κ⁻¹ X ∘ substₑ (⇒⇒nf h)) ∘ _≅_.from (strictify X)
+    ≈⟨ (refl⟩∘⟨ loop) ⟩∘⟨refl ⟩
+  (κ⁻¹ X ∘ id) ∘ _≅_.from (strictify X)
+    ≈⟨ identityʳ ⟩∘⟨refl ⟩
   κ⁻¹ X ∘ _≅_.from (strictify X)      ≈⟨ _≅_.isoˡ (strictify X) ⟩
   id                              ∎
 

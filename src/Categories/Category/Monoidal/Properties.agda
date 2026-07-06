@@ -13,7 +13,7 @@ open Category C
 open M.Monoidal MC
 open import Categories.Category.Monoidal.Utilities MC
 open import Categories.Category.Monoidal.Reasoning MC
-  using (_⟩⊗⟨_; ⊗-factor-over-∘)
+  using (_⟩⊗⟨_; ⊗-distrib-over-∘)
 open import Categories.Category.Construction.Core C as Core using (Core)
 open import Categories.Category.Product using (Product)
 open import Categories.Functor using (Functor)
@@ -293,8 +293,12 @@ open Shorthands
 
 private
   id⊗α-iso : (id {A} ⊗₁ α⇐ {P} {Q} {R}) ∘ (id ⊗₁ α⇒) ≈ id
-  id⊗α-iso = Equiv.trans ⊗-factor-over-∘
-    (Equiv.trans (identity² ⟩⊗⟨ associator.isoˡ) ⊗.identity)
+  id⊗α-iso {A} {P} {Q} {R} = begin
+    (id {A} ⊗₁ α⇐ {P} {Q} {R}) ∘ (id ⊗₁ α⇒)  ≈˘⟨ ⊗-distrib-over-∘ ⟩
+    (id ∘ id) ⊗₁ (α⇐ ∘ α⇒)                   ≈⟨ identity² ⟩⊗⟨ associator.isoˡ ⟩
+    id ⊗₁ id                                  ≈⟨ ⊗.identity ⟩
+    id                                        ∎
+    where open C.HomReasoning
 
 assoc-shuffle
   : α⇒ {A ⊗₀ P} {Q} {R} ∘ (α⇐ {A} {P} {Q} ⊗₁ id) ∘ α⇐ {A} {P ⊗₀ Q} {R}
