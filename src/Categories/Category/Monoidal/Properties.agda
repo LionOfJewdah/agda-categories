@@ -11,7 +11,8 @@ open import Data.Product using (_,_; Σ; uncurry′)
 
 open Category C
 open M.Monoidal MC
-open import Categories.Category.Monoidal.Utilities MC
+import Categories.Category.Monoidal.Utilities as MonoidalUtilities
+open import Categories.Category.Monoidal.Utilities MC hiding (triangle-inv)
 open import Categories.Category.Monoidal.Reasoning MC
   using (_⟩⊗⟨_; ⊗-distrib-over-∘)
 open import Categories.Category.Construction.Core C as Core using (Core)
@@ -44,7 +45,7 @@ monoidal-Op = record
   ; unitorʳ-commute-to = sym unitorʳ-commute-from
   ; assoc-commute-from = sym assoc-commute-to
   ; assoc-commute-to = sym assoc-commute-from
-  ; triangle = triangle-inv
+  ; triangle = MonoidalUtilities.triangle-inv MC
   ; pentagon = pentagon-inv
   }
   where
@@ -330,3 +331,403 @@ unitorʳ-assoc-absorb = begin
   where
     open C.HomReasoning
     open MR C
+
+module Structural where
+  open import Categories.Category.Monoidal.Reasoning MC
+  open TensorIdentity using (id⊗id; ⊗id-∘)
+  open MR C
+
+  cancel-middle : ∀ {A B C D}
+    {prefix : B ⇒ D} {from : C ⇒ B} {to : B ⇒ C} {suffix : A ⇒ B} →
+    from ∘ to ≈ id → (prefix ∘ from) ∘ (to ∘ suffix) ≈ prefix ∘ suffix
+  cancel-middle {prefix = prefix} {from = from} {to = to} {suffix = suffix} from∘to = begin
+    (prefix ∘ from) ∘ (to ∘ suffix)
+      ≈⟨ assoc ⟩
+    prefix ∘ (from ∘ (to ∘ suffix))
+      ≈⟨ refl⟩∘⟨ sym-assoc ⟩
+    prefix ∘ ((from ∘ to) ∘ suffix)
+      ≈⟨ refl⟩∘⟨ from∘to ⟩∘⟨refl ⟩
+    prefix ∘ (id ∘ suffix)
+      ≈⟨ refl⟩∘⟨ identityˡ ⟩
+    prefix ∘ suffix
+      ∎
+
+  α-slide : ∀ {A P Q Z} {h : P ⇒ Q} →
+    (id {A} ⊗₁ (h ⊗₁ id {Z})) ∘ α⇒ {A} {P} {Z}
+    ≈ α⇒ {A} {Q} {Z} ∘ ((id {A} ⊗₁ h) ⊗₁ id {Z})
+  α-slide = ⟺ assoc-commute-from
+
+  α-sweep : ∀ {Y B P Q} {k : P ⇒ Q} →
+    α⇒ {Y} {B} {Q} ∘ (id {Y ⊗₀ B} ⊗₁ k)
+      ≈ (id {Y} ⊗₁ (id {B} ⊗₁ k)) ∘ α⇒ {Y} {B} {P}
+  α-sweep {Y} {B} {P} {Q} {k} = begin
+    α⇒ {Y} {B} {Q} ∘ (id {Y ⊗₀ B} ⊗₁ k)
+      ≈˘⟨ refl⟩∘⟨ (id⊗id ⟩⊗⟨refl) ⟩
+    α⇒ {Y} {B} {Q} ∘ ((id {Y} ⊗₁ id {B}) ⊗₁ k)
+      ≈⟨ assoc-commute-from ⟩
+    (id {Y} ⊗₁ (id {B} ⊗₁ k)) ∘ α⇒ {Y} {B} {P}
+      ∎
+
+  α⊗id-cancel : ∀ {A B C Z} →
+    (α⇒ {A} {B} {C} ⊗₁ id {Z}) ∘ (α⇐ {A} {B} {C} ⊗₁ id {Z}) ≈ id
+  α⊗id-cancel = ⊗-cancel associator.isoʳ identity²
+
+  α-inner-slide : ∀ {A X P Q Z} {h : P ⇒ Q} →
+    ((id {A} ⊗₁ (id {X} ⊗₁ h)) ⊗₁ id {Z})
+      ∘ (α⇒ {A} {X} {P} ⊗₁ id {Z})
+    ≈ (α⇒ {A} {X} {Q} ⊗₁ id {Z})
+        ∘ ((id {A ⊗₀ X} ⊗₁ h) ⊗₁ id {Z})
+  α-inner-slide {A} {X} {P} {Q} {Z} {h} = begin
+    ((id {A} ⊗₁ (id {X} ⊗₁ h)) ⊗₁ id {Z})
+      ∘ (α⇒ {A} {X} {P} ⊗₁ id {Z})
+      ≈˘⟨ ⊗id-∘ ⟩
+    ((id {A} ⊗₁ (id {X} ⊗₁ h)) ∘ α⇒ {A} {X} {P}) ⊗₁ id {Z}
+      ≈˘⟨ assoc-commute-from {f = id {A}} {g = id {X}} {h = h} ⟩⊗⟨refl ⟩
+    (α⇒ {A} {X} {Q} ∘ ((id {A} ⊗₁ id {X}) ⊗₁ h)) ⊗₁ id {Z}
+      ≈⟨ (refl⟩∘⟨ id⊗id ⟩⊗⟨refl) ⟩⊗⟨refl ⟩
+    (α⇒ {A} {X} {Q} ∘ (id {A ⊗₀ X} ⊗₁ h)) ⊗₁ id {Z}
+      ≈⟨ ⊗id-∘ ⟩
+    (α⇒ {A} {X} {Q} ⊗₁ id {Z})
+      ∘ ((id {A ⊗₀ X} ⊗₁ h) ⊗₁ id {Z})
+      ∎
+
+  α-inner : ∀ {A X P Q Z} {h : P ⇒ Q} →
+    (id {A} ⊗₁ ((id {X} ⊗₁ h) ⊗₁ id {Z}))
+      ∘ α⇒ {A} {X ⊗₀ P} {Z}
+      ∘ (α⇒ {A} {X} {P} ⊗₁ id {Z})
+    ≈ α⇒ {A} {X ⊗₀ Q} {Z}
+        ∘ (α⇒ {A} {X} {Q} ⊗₁ id {Z})
+        ∘ ((id {A ⊗₀ X} ⊗₁ h) ⊗₁ id {Z})
+  α-inner {A} {X} {P} {Q} {Z} {h} = begin
+    (id {A} ⊗₁ ((id {X} ⊗₁ h) ⊗₁ id {Z}))
+      ∘ α⇒ {A} {X ⊗₀ P} {Z}
+      ∘ (α⇒ {A} {X} {P} ⊗₁ id {Z})
+      ≈⟨ pullˡ α-slide ⟩
+    (α⇒ {A} {X ⊗₀ Q} {Z}
+      ∘ ((id {A} ⊗₁ (id {X} ⊗₁ h)) ⊗₁ id {Z}))
+      ∘ (α⇒ {A} {X} {P} ⊗₁ id {Z})
+      ≈⟨ assoc ⟩
+    α⇒ {A} {X ⊗₀ Q} {Z}
+      ∘ (((id {A} ⊗₁ (id {X} ⊗₁ h)) ⊗₁ id {Z})
+      ∘ (α⇒ {A} {X} {P} ⊗₁ id {Z}))
+      ≈⟨ refl⟩∘⟨ α-inner-slide ⟩
+    α⇒ {A} {X ⊗₀ Q} {Z}
+      ∘ (α⇒ {A} {X} {Q} ⊗₁ id {Z})
+      ∘ ((id {A ⊗₀ X} ⊗₁ h) ⊗₁ id {Z})
+      ∎
+
+  ρ-peel : ∀ {A X Z} →
+    (id {A} ⊗₁ (ρ⇒ {X} ⊗₁ id {Z}))
+      ∘ α⇒ {A} {X ⊗₀ unit} {Z}
+      ∘ (α⇒ {A} {X} {unit} ⊗₁ id {Z})
+    ≈ α⇒ {A} {X} {Z} ∘ (ρ⇒ {A ⊗₀ X} ⊗₁ id {Z})
+  ρ-peel {A} {X} {Z} = begin
+    (id {A} ⊗₁ (ρ⇒ {X} ⊗₁ id {Z}))
+      ∘ α⇒ {A} {X ⊗₀ unit} {Z}
+      ∘ (α⇒ {A} {X} {unit} ⊗₁ id {Z})
+      ≈⟨ pullˡ (⟺ (assoc-commute-from {f = id {A}} {g = ρ⇒ {X}} {h = id {Z}})) ⟩
+    (α⇒ {A} {X} {Z} ∘ ((id {A} ⊗₁ ρ⇒ {X}) ⊗₁ id {Z}))
+      ∘ (α⇒ {A} {X} {unit} ⊗₁ id {Z})
+      ≈⟨ assoc ⟩
+    α⇒ {A} {X} {Z}
+      ∘ (((id {A} ⊗₁ ρ⇒ {X}) ⊗₁ id {Z})
+      ∘ (α⇒ {A} {X} {unit} ⊗₁ id {Z}))
+      ≈˘⟨ refl⟩∘⟨ ⊗id-∘ ⟩
+    α⇒ {A} {X} {Z}
+      ∘ ((id {A} ⊗₁ ρ⇒ {X}) ∘ α⇒ {A} {X} {unit}) ⊗₁ id {Z}
+      ≈⟨ refl⟩∘⟨ coherence₂ ⟩⊗⟨refl ⟩
+    α⇒ {A} {X} {Z} ∘ (ρ⇒ {A ⊗₀ X} ⊗₁ id {Z})
+      ∎
+
+  triangle-inv : ∀ {A Z} →
+    α⇒ {A} {unit} {Z} ∘ (ρ⇐ {A} ⊗₁ id {Z})
+      ≈ id {A} ⊗₁ λ⇐ {Z}
+  triangle-inv {A} {Z} = begin
+    α⇒ {A} {unit} {Z} ∘ (ρ⇐ {A} ⊗₁ id {Z})
+      ≈˘⟨ switch-tofromˡ (associator {A} {unit} {Z})
+            (MonoidalUtilities.triangle-inv MC) ⟩
+    id {A} ⊗₁ λ⇐ {Z}
+      ∎
+
+  α-unit : ∀ {A B Z} →
+    α⇒ {A} {B} {unit ⊗₀ Z}
+      ∘ α⇒ {A ⊗₀ B} {unit} {Z}
+      ∘ (ρ⇐ ⊗₁ id {Z})
+      ∘ α⇐ {A} {B} {Z}
+    ≈ id {A} ⊗₁ (id {B} ⊗₁ λ⇐ {Z})
+  α-unit {A} {B} {Z} = begin
+    α⇒ {A} {B} {unit ⊗₀ Z}
+      ∘ α⇒ {A ⊗₀ B} {unit} {Z}
+      ∘ (ρ⇐ {A ⊗₀ B} ⊗₁ id {Z})
+      ∘ α⇐ {A} {B} {Z}
+      ≈⟨ refl⟩∘⟨ sym-assoc ⟩
+    α⇒ {A} {B} {unit ⊗₀ Z}
+      ∘ (α⇒ {A ⊗₀ B} {unit} {Z}
+      ∘ (ρ⇐ {A ⊗₀ B} ⊗₁ id {Z}))
+      ∘ α⇐ {A} {B} {Z}
+      ≈⟨ refl⟩∘⟨ (triangle-inv {A = A ⊗₀ B} {Z = Z} ⟩∘⟨refl) ⟩
+    α⇒ {A} {B} {unit ⊗₀ Z}
+      ∘ (id {A ⊗₀ B} ⊗₁ λ⇐ {Z})
+      ∘ α⇐ {A} {B} {Z}
+      ≈˘⟨ refl⟩∘⟨ (id⊗id {A} {B} ⟩⊗⟨refl) ⟩∘⟨refl ⟩
+    α⇒ {A} {B} {unit ⊗₀ Z}
+      ∘ ((id {A} ⊗₁ id {B}) ⊗₁ λ⇐ {Z})
+      ∘ α⇐ {A} {B} {Z}
+      ≈˘⟨ refl⟩∘⟨ assoc-commute-to {f = id {A}} {g = id {B}} {h = λ⇐ {Z}} ⟩
+    α⇒ {A} {B} {unit ⊗₀ Z}
+      ∘ α⇐ {A} {B} {unit ⊗₀ Z}
+      ∘ (id {A} ⊗₁ (id {B} ⊗₁ λ⇐ {Z}))
+      ≈⟨ cancelˡ associator.isoʳ ⟩
+    id {A} ⊗₁ (id {B} ⊗₁ λ⇐ {Z})
+      ∎
+
+  assoc-to-coherence : ∀ {A B C D} →
+    (id {A} ⊗₁ α⇐ {B} {C} {D})
+      ∘ α⇒ {A} {B} {C ⊗₀ D}
+    ≈ α⇒ {A} {B ⊗₀ C} {D}
+        ∘ (α⇒ {A} {B} {C} ⊗₁ id {D})
+        ∘ α⇐ {A ⊗₀ B} {C} {D}
+  assoc-to-coherence {A} {B} {C} {D} = begin
+    (id {A} ⊗₁ α⇐ {B} {C} {D}) ∘ α⇒ {A} {B} {C ⊗₀ D}
+      ≈⟨ conjugate-from
+           (associator {A ⊗₀ B} {C} {D})
+           (idᵢ {A} ⊗ᵢ associator {B} {C} {D})
+           {f = α⇒ {A} {B} {C ⊗₀ D}}
+           {g = α⇒ {A} {B ⊗₀ C} {D} ∘ (α⇒ {A} {B} {C} ⊗₁ id {D})}
+           (⟺ (pentagon {X = A} {Y = B} {Z = C} {W = D})) ⟩
+    (α⇒ {A} {B ⊗₀ C} {D} ∘ (α⇒ {A} {B} {C} ⊗₁ id {D}))
+      ∘ α⇐ {A ⊗₀ B} {C} {D}
+      ≈⟨ assoc ⟩
+    α⇒ {A} {B ⊗₀ C} {D}
+      ∘ (α⇒ {A} {B} {C} ⊗₁ id {D})
+      ∘ α⇐ {A ⊗₀ B} {C} {D}
+      ∎
+
+  assoc-peel : ∀ {A B C D} →
+    (id {A} ⊗₁ α⇒ {B} {C} {D})
+      ∘ α⇒ {A} {B ⊗₀ C} {D}
+    ≈ α⇒ {A} {B} {C ⊗₀ D}
+        ∘ α⇒ {A ⊗₀ B} {C} {D}
+        ∘ (α⇐ {A} {B} {C} ⊗₁ id {D})
+  assoc-peel {A} {B} {C} {D} =
+    conjugate-to
+      (associator {A} {B ⊗₀ C} {D})
+      (associator {A} {B} {C ⊗₀ D})
+      {f = id {A} ⊗₁ α⇒ {B} {C} {D}}
+      {g = α⇒ {A ⊗₀ B} {C} {D}
+        ∘ (α⇐ {A} {B} {C} ⊗₁ id {D})}
+      (⟺ (assoc-shuffle {A = A} {P = B} {Q = C} {R = D}) ○ sym-assoc)
+
+  α-peel⊗id : ∀ {A B C D E} →
+    (id {A} ⊗₁ (α⇒ {B} {C} {D} ⊗₁ id {E}))
+      ∘ α⇒ {A} {(B ⊗₀ C) ⊗₀ D} {E}
+      ∘ (α⇒ {A} {B ⊗₀ C} {D} ⊗₁ id {E})
+    ≈ α⇒ {A} {B ⊗₀ (C ⊗₀ D)} {E}
+        ∘ (α⇒ {A} {B} {C ⊗₀ D} ⊗₁ id {E})
+        ∘ (α⇒ {A ⊗₀ B} {C} {D} ⊗₁ id {E})
+        ∘ ((α⇐ {A} {B} {C} ⊗₁ id {D}) ⊗₁ id {E})
+  α-peel⊗id {A} {B} {C} {D} {E} = begin
+    (id {A} ⊗₁ (α⇒ {B} {C} {D} ⊗₁ id {E}))
+      ∘ α⇒ {A} {(B ⊗₀ C) ⊗₀ D} {E}
+      ∘ (α⇒ {A} {B ⊗₀ C} {D} ⊗₁ id {E})
+      ≈⟨ pullˡ α-slide ⟩
+    (α⇒ {A} {B ⊗₀ (C ⊗₀ D)} {E}
+      ∘ ((id {A} ⊗₁ α⇒ {B} {C} {D}) ⊗₁ id {E}))
+      ∘ (α⇒ {A} {B ⊗₀ C} {D} ⊗₁ id {E})
+      ≈⟨ assoc ⟩
+    α⇒ {A} {B ⊗₀ (C ⊗₀ D)} {E}
+      ∘ (((id {A} ⊗₁ α⇒ {B} {C} {D}) ⊗₁ id {E})
+      ∘ (α⇒ {A} {B ⊗₀ C} {D} ⊗₁ id {E}))
+      ≈˘⟨ refl⟩∘⟨ ⊗id-∘ ⟩
+    α⇒ {A} {B ⊗₀ (C ⊗₀ D)} {E}
+      ∘ (((id {A} ⊗₁ α⇒ {B} {C} {D})
+      ∘ α⇒ {A} {B ⊗₀ C} {D}) ⊗₁ id {E})
+      ≈⟨ refl⟩∘⟨ (assoc-peel {A} {B} {C} {D} ⟩⊗⟨refl) ⟩
+    α⇒ {A} {B ⊗₀ (C ⊗₀ D)} {E}
+      ∘ ((α⇒ {A} {B} {C ⊗₀ D}
+      ∘ α⇒ {A ⊗₀ B} {C} {D}
+      ∘ (α⇐ {A} {B} {C} ⊗₁ id {D})) ⊗₁ id {E})
+      ≈⟨ refl⟩∘⟨ ⊗id-∘ ⟩
+    α⇒ {A} {B ⊗₀ (C ⊗₀ D)} {E}
+      ∘ ((α⇒ {A} {B} {C ⊗₀ D} ⊗₁ id {E})
+      ∘ ((α⇒ {A ⊗₀ B} {C} {D}
+      ∘ (α⇐ {A} {B} {C} ⊗₁ id {D})) ⊗₁ id {E}))
+      ≈⟨ refl⟩∘⟨ refl⟩∘⟨ ⊗id-∘ ⟩
+    α⇒ {A} {B ⊗₀ (C ⊗₀ D)} {E}
+      ∘ (α⇒ {A} {B} {C ⊗₀ D} ⊗₁ id {E})
+      ∘ (α⇒ {A ⊗₀ B} {C} {D} ⊗₁ id {E})
+      ∘ ((α⇐ {A} {B} {C} ⊗₁ id {D}) ⊗₁ id {E})
+      ∎
+
+  pentagon-tail : ∀ {A B C D} →
+    α⇐ {A} {B} {C ⊗₀ D}
+      ∘ (id {A} ⊗₁ α⇒ {B} {C} {D})
+      ∘ α⇒ {A} {B ⊗₀ C} {D}
+      ∘ (α⇒ {A} {B} {C} ⊗₁ id {D})
+    ≈ α⇒ {A ⊗₀ B} {C} {D}
+  pentagon-tail {A} {B} {C} {D} = begin
+    α⇐ {A} {B} {C ⊗₀ D}
+      ∘ (id {A} ⊗₁ α⇒ {B} {C} {D})
+      ∘ α⇒ {A} {B ⊗₀ C} {D}
+      ∘ (α⇒ {A} {B} {C} ⊗₁ id {D})
+      ≈⟨ refl⟩∘⟨ pentagon {X = A} {Y = B} {Z = C} {W = D} ⟩
+    α⇐ {A} {B} {C ⊗₀ D}
+      ∘ α⇒ {A} {B} {C ⊗₀ D}
+      ∘ α⇒ {A ⊗₀ B} {C} {D}
+      ≈⟨ sym-assoc ⟩
+    (α⇐ {A} {B} {C ⊗₀ D} ∘ α⇒ {A} {B} {C ⊗₀ D})
+      ∘ α⇒ {A ⊗₀ B} {C} {D}
+      ≈⟨ associator.isoˡ ⟩∘⟨refl ⟩
+    id ∘ α⇒ {A ⊗₀ B} {C} {D}
+      ≈⟨ identityˡ ⟩
+    α⇒ {A ⊗₀ B} {C} {D}
+      ∎
+
+  assoc-pair-coherence : ∀ {A B C D E} →
+      α⇒ {A} {B ⊗₀ C} {D ⊗₀ E}
+        ∘ (α⇒ {A} {B} {C} ⊗₁ id {D ⊗₀ E})
+        ∘ α⇒ {(A ⊗₀ B) ⊗₀ C} {D} {E}
+    ≈ (id {A} ⊗₁ α⇐ {B} {C} {D ⊗₀ E})
+        ∘ α⇒ {A} {B} {C ⊗₀ (D ⊗₀ E)}
+        ∘ (id {A ⊗₀ B} ⊗₁ α⇒ {C} {D} {E})
+        ∘ α⇒ {A ⊗₀ B} {C ⊗₀ D} {E}
+        ∘ (α⇒ {A ⊗₀ B} {C} {D} ⊗₁ id {E})
+  assoc-pair-coherence {A} {B} {C} {D} {E} = begin
+    α⇒ {A} {B ⊗₀ C} {D ⊗₀ E}
+      ∘ (α⇒ {A} {B} {C} ⊗₁ id {D ⊗₀ E})
+      ∘ α⇒ {(A ⊗₀ B) ⊗₀ C} {D} {E}
+      ≈˘⟨ refl⟩∘⟨ (refl⟩∘⟨ pentagon-tail {A = A ⊗₀ B} {B = C} {C = D} {D = E}) ⟩
+    α⇒ {A} {B ⊗₀ C} {D ⊗₀ E}
+      ∘ (α⇒ {A} {B} {C} ⊗₁ id {D ⊗₀ E})
+      ∘ (α⇐ {A ⊗₀ B} {C} {D ⊗₀ E}
+      ∘ (id {A ⊗₀ B} ⊗₁ α⇒ {C} {D} {E})
+      ∘ α⇒ {A ⊗₀ B} {C ⊗₀ D} {E}
+      ∘ (α⇒ {A ⊗₀ B} {C} {D} ⊗₁ id {E}))
+      ≈⟨ refl⟩∘⟨ sym-assoc ⟩
+    α⇒ {A} {B ⊗₀ C} {D ⊗₀ E}
+      ∘ ((α⇒ {A} {B} {C} ⊗₁ id {D ⊗₀ E})
+      ∘ α⇐ {A ⊗₀ B} {C} {D ⊗₀ E})
+      ∘ (id {A ⊗₀ B} ⊗₁ α⇒ {C} {D} {E})
+      ∘ α⇒ {A ⊗₀ B} {C ⊗₀ D} {E}
+      ∘ (α⇒ {A ⊗₀ B} {C} {D} ⊗₁ id {E})
+      ≈⟨ sym-assoc ⟩
+    (α⇒ {A} {B ⊗₀ C} {D ⊗₀ E}
+      ∘ (α⇒ {A} {B} {C} ⊗₁ id {D ⊗₀ E})
+      ∘ α⇐ {A ⊗₀ B} {C} {D ⊗₀ E})
+      ∘ (id {A ⊗₀ B} ⊗₁ α⇒ {C} {D} {E})
+      ∘ α⇒ {A ⊗₀ B} {C ⊗₀ D} {E}
+      ∘ (α⇒ {A ⊗₀ B} {C} {D} ⊗₁ id {E})
+      ≈⟨ ⟺ (assoc-to-coherence {A} {B} {C} {D ⊗₀ E}) ⟩∘⟨refl ⟩
+    ((id {A} ⊗₁ α⇐ {B} {C} {D ⊗₀ E})
+      ∘ α⇒ {A} {B} {C ⊗₀ (D ⊗₀ E)})
+      ∘ (id {A ⊗₀ B} ⊗₁ α⇒ {C} {D} {E})
+      ∘ α⇒ {A ⊗₀ B} {C ⊗₀ D} {E}
+      ∘ (α⇒ {A ⊗₀ B} {C} {D} ⊗₁ id {E})
+      ≈⟨ assoc ⟩
+    (id {A} ⊗₁ α⇐ {B} {C} {D ⊗₀ E})
+      ∘ α⇒ {A} {B} {C ⊗₀ (D ⊗₀ E)}
+      ∘ (id {A ⊗₀ B} ⊗₁ α⇒ {C} {D} {E})
+      ∘ α⇒ {A ⊗₀ B} {C ⊗₀ D} {E}
+      ∘ (α⇒ {A ⊗₀ B} {C} {D} ⊗₁ id {E})
+      ∎
+
+  pentagon′ : ∀ {A B C D} →
+      α⇒ {A ⊗₀ B} {C} {D}
+        ∘ (α⇐ {A} {B} {C} ⊗₁ id {D})
+    ≈ α⇐ {A} {B} {C ⊗₀ D}
+        ∘ (id {A} ⊗₁ α⇒ {B} {C} {D})
+        ∘ α⇒ {A} {B ⊗₀ C} {D}
+  pentagon′ {A} {B} {C} {D} = begin
+    α⇒ {A ⊗₀ B} {C} {D}
+      ∘ (α⇐ {A} {B} {C} ⊗₁ id {D})
+      ≈⟨ switch-tofromʳ (associator {A} {B ⊗₀ C} {D})
+           (assoc ○ assoc-shuffle {A = A} {P = B} {Q = C} {R = D}) ⟩
+    (α⇐ {A} {B} {C ⊗₀ D} ∘ (id {A} ⊗₁ α⇒ {B} {C} {D}))
+      ∘ α⇒ {A} {B ⊗₀ C} {D}
+      ≈⟨ assoc ⟩
+    α⇐ {A} {B} {C ⊗₀ D}
+      ∘ (id {A} ⊗₁ α⇒ {B} {C} {D})
+      ∘ α⇒ {A} {B ⊗₀ C} {D}
+      ∎
+
+  λ-left : ∀ {P Q} →
+    α⇒ {unit} {P} {Q} ∘ (λ⇐ ⊗₁ id {Q})
+      ≈ λ⇐ {P ⊗₀ Q}
+  λ-left = unitorˡ-assoc-absorb
+
+  ρ-sweep : ∀ {X Y L} {h : L ⇒ unit} →
+    ρ⇒ ∘ (id {X ⊗₀ Y} ⊗₁ h) ∘ α⇐ {X} {Y} {L}
+      ≈ id {X} ⊗₁ (ρ⇒ ∘ (id {Y} ⊗₁ h))
+  ρ-sweep {X} {Y} {L} {h} = begin
+    ρ⇒ ∘ (id {X ⊗₀ Y} ⊗₁ h) ∘ α⇐ {X} {Y} {L}
+      ≈⟨ refl⟩∘⟨ ρ-nat ⟩
+    ρ⇒ ∘ α⇐ {X} {Y} {unit} ∘ (id {X} ⊗₁ (id {Y} ⊗₁ h))
+      ≈⟨ pullˡ ρ-coh ⟩
+    (id {X} ⊗₁ ρ⇒) ∘ (id {X} ⊗₁ (id {Y} ⊗₁ h))
+      ≈⟨ merge₂ˡ ⟩
+    id {X} ⊗₁ (ρ⇒ ∘ (id {Y} ⊗₁ h))
+      ∎
+    where
+      ρ-nat :
+        (id {X ⊗₀ Y} ⊗₁ h) ∘ α⇐ {X} {Y} {L}
+        ≈ α⇐ {X} {Y} {unit} ∘ (id {X} ⊗₁ (id {Y} ⊗₁ h))
+      ρ-nat = begin
+        (id {X ⊗₀ Y} ⊗₁ h) ∘ α⇐ {X} {Y} {L}
+          ≈˘⟨ ((id⊗id {X} {Y}) ⟩⊗⟨refl) ⟩∘⟨refl ⟩
+        ((id {X} ⊗₁ id {Y}) ⊗₁ h) ∘ α⇐ {X} {Y} {L}
+          ≈˘⟨ assoc-commute-to {f = id {X}} {g = id {Y}} {h = h} ⟩
+        α⇐ {X} {Y} {unit} ∘ (id {X} ⊗₁ (id {Y} ⊗₁ h))
+          ∎
+
+      ρ-coh :
+        ρ⇒ ∘ α⇐ {X} {Y} {unit}
+        ≈ id {X} ⊗₁ ρ⇒
+      ρ-coh = ⟺ (switch-fromtoʳ associator coherence₂)
+
+  ρ-sweep-open : ∀ {X Y L} {h : L ⇒ unit} →
+    (id {X} ⊗₁ (ρ⇒ ∘ (id {Y} ⊗₁ h)))
+      ∘ α⇒ {X} {Y} {L}
+    ≈ ρ⇒ ∘ (id {X ⊗₀ Y} ⊗₁ h)
+  ρ-sweep-open {X} {Y} {L} {h} = begin
+    (id {X} ⊗₁ (ρ⇒ ∘ (id {Y} ⊗₁ h))) ∘ α⇒ {X} {Y} {L}
+      ≈˘⟨ ρ-sweep {X} {Y} {L} {h} ⟩∘⟨refl ⟩
+    (ρ⇒ ∘ (id {X ⊗₀ Y} ⊗₁ h) ∘ α⇐ {X} {Y} {L})
+      ∘ α⇒ {X} {Y} {L}
+      ≈⟨ assoc²βε ⟩
+    ρ⇒ ∘ (id {X ⊗₀ Y} ⊗₁ h)
+      ∘ (α⇐ {X} {Y} {L} ∘ α⇒ {X} {Y} {L})
+      ≈⟨ refl⟩∘⟨ refl⟩∘⟨ associator.isoˡ ⟩
+    ρ⇒ ∘ (id {X ⊗₀ Y} ⊗₁ h) ∘ id
+      ≈⟨ refl⟩∘⟨ identityʳ ⟩
+    ρ⇒ ∘ (id {X ⊗₀ Y} ⊗₁ h)
+      ∎
+
+  cap-reassoc : ∀ {A P Q B} {cap : P ⊗₀ Q ⇒ unit} →
+    (id {A} ⊗₁ (λ⇒ ∘ (cap ⊗₁ id {B}) ∘ α⇐))
+      ∘ α⇒ {A} {P} {Q ⊗₀ B}
+    ≈ ((ρ⇒ ⊗₁ id {B}) ∘ ((id {A} ⊗₁ cap) ⊗₁ id {B}))
+        ∘ (α⇒ {A} {P} {Q} ⊗₁ id {B})
+        ∘ α⇐ {A ⊗₀ P} {Q} {B}
+  cap-reassoc {A} {P} {Q} {B} {cap} = begin
+    (id {A} ⊗₁ (λ⇒ ∘ (cap ⊗₁ id {B}) ∘ α⇐))
+      ∘ α⇒ {A} {P} {Q ⊗₀ B}
+      ≈⟨ cap-reassoc-core ⟩
+    ((ρ⇒ ⊗₁ id {B}) ∘ ((id {A} ⊗₁ cap) ⊗₁ id {B}))
+      ∘ (α⇒ {A} {P} {Q} ⊗₁ id {B})
+      ∘ α⇐ {A ⊗₀ P} {Q} {B}
+      ∎
+    where
+      cap-reassoc-core :
+        (id {A} ⊗₁ (λ⇒ ∘ (cap ⊗₁ id {B}) ∘ α⇐))
+          ∘ α⇒ {A} {P} {Q ⊗₀ B}
+        ≈ ((ρ⇒ ⊗₁ id {B}) ∘ ((id {A} ⊗₁ cap) ⊗₁ id {B}))
+          ∘ (α⇒ {A} {P} {Q} ⊗₁ id {B})
+          ∘ α⇐ {A ⊗₀ P} {Q} {B}
+      cap-reassoc-core =
+        ((split₂ˡ ○ (refl⟩∘⟨ split₂ˡ)) ⟩∘⟨refl)
+        ○ (assoc ○ (refl⟩∘⟨ assoc))
+        ○ refl⟩∘⟨ refl⟩∘⟨ assoc-to-coherence
+        ○ (refl⟩∘⟨ (sym-assoc ○ (⟺ assoc-commute-from ⟩∘⟨refl) ○ assoc))
+        ○ ⟺ assoc
+        ○ triangle ⟩∘⟨refl
+        ○ ⟺ assoc

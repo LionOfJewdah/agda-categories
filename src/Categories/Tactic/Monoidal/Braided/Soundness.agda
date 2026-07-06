@@ -52,7 +52,7 @@ open Shorthands
 open import Categories.Category.Monoidal.Properties V using (module Kelly's)
 open Kelly's using (coherence-inv₁; coherence-inv₂; coherence-inv₃)
 import Categories.Category.Monoidal.Braided.Properties as BraidedProperties
-open BraidedProperties B using (braiding-coherence; inv-Braided)
+open BraidedProperties B using (braiding-coherenceʳ-inv; inv-Braided)
 module InvBraidedProperties = BraidedProperties inv-Braided
 open import Categories.Morphism.Reasoning 𝒞
   using (assoc²βε; pullˡ; pullʳ; elimˡ; elimʳ; module Cancellers; module Switch)
@@ -82,25 +82,6 @@ private
     (σ⇒ ∘ ρ⇐) ⊗₁ (id ∘ id)
       ≈⟨ Equiv.refl ⟩⊗⟨ identity² ⟩
     (σ⇒ ∘ ρ⇐) ⊗₁ id
-      ∎
-
-  σ-unitʳ : ∀ {A} → σ⇒ {A} {unit} ∘ ρ⇐ ≈ λ⇐
-  σ-unitʳ {A} = begin
-    σ⇒ {A} {unit} ∘ ρ⇐ {A}
-      ≈˘⟨ identityˡ ⟩
-    id ∘ (σ⇒ {A} {unit} ∘ ρ⇐ {A})
-      ≈˘⟨ unitorˡ.isoˡ ⟩∘⟨refl ⟩
-    (λ⇐ ∘ λ⇒) ∘ (σ⇒ {A} {unit} ∘ ρ⇐ {A})
-      ≈⟨ assoc ⟩
-    λ⇐ ∘ (λ⇒ ∘ (σ⇒ {A} {unit} ∘ ρ⇐ {A}))
-      ≈⟨ refl⟩∘⟨ sym-assoc ⟩
-    λ⇐ ∘ ((λ⇒ ∘ σ⇒ {A} {unit}) ∘ ρ⇐ {A})
-      ≈⟨ refl⟩∘⟨ (braiding-coherence ⟩∘⟨refl) ⟩
-    λ⇐ ∘ (ρ⇒ ∘ ρ⇐ {A})
-      ≈⟨ refl⟩∘⟨ unitorʳ.isoʳ ⟩
-    λ⇐ ∘ id
-      ≈⟨ identityʳ ⟩
-    λ⇐
       ∎
 
 realize↭ : ∀ {xs ys : List Atom} → xs ↭ ys → ⟦ xs ⟧ᴹ ⇒ ⟦ ys ⟧ᴹ
@@ -261,7 +242,7 @@ braid-atom a []        tl = begin
   α⇒ ∘ (σ⇒ ⊗₁ id) ∘ (ρ⇐ ⊗₁ id)
     ≈⟨ refl⟩∘⟨ σρ-factor ⟩
   α⇒ ∘ ((σ⇒ ∘ ρ⇐) ⊗₁ id)
-    ≈⟨ refl⟩∘⟨ (σ-unitʳ ⟩⊗⟨refl) ⟩
+    ≈⟨ refl⟩∘⟨ (braiding-coherenceʳ-inv ⟩⊗⟨refl) ⟩
   α⇒ ∘ (λ⇐ ⊗₁ id)
     ≈⟨ refl⟩∘⟨ (⟺ coherence-inv₁) ⟩
   α⇒ ∘ (α⇐ ∘ λ⇐)

@@ -152,6 +152,14 @@ braiding-coherence-iso = ⌞ braiding-coherence ⌟
 braiding-coherence-inv : σ⇐ ∘ λ⇐ ≈ ρ⇐ {X}
 braiding-coherence-inv = to-≈ braiding-coherence-iso
 
+braiding-coherenceʳ-inv : σ⇒ {X} {unit} ∘ ρ⇐ ≈ λ⇐
+braiding-coherenceʳ-inv = begin
+  σ⇒ ∘ ρ⇐
+    ≈⟨ switch-fromtoˡ unitorˡ braiding-coherence ⟩∘⟨refl ⟩
+  (λ⇐ ∘ ρ⇒) ∘ ρ⇐
+    ≈⟨ cancelʳ unitorʳ.isoʳ ⟩
+  λ⇐ ∎
+
 -- The inverse of the braiding is also a braiding on M.
 
 inv-Braided : Braided M

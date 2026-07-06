@@ -145,19 +145,6 @@ split₂ˡ {f = f} {g} {h} = begin
   (id ∘ f) ⊗₁ (g ∘ h)   ≈⟨ ⊗-distrib-over-∘ ⟩
   id ⊗₁ g ∘ f ⊗₁ h      ∎
 
-module TensorIdentity where
-
-  id⊗id : ∀ {A B} → id {A} ⊗₁ id {B} ≈ id
-  id⊗id = Functor.identity ⊗
-
-  whisker-∘ : ∀ {Y P Q Z} {g : Q ⇒ Z} {h : P ⇒ Q} →
-    id {Y} ⊗₁ (g ∘ h) ≈ id {Y} ⊗₁ g ∘ id {Y} ⊗₁ h
-  whisker-∘ = split₂ˡ
-
-  ⊗id-∘ : ∀ {P Q T Z} {g : Q ⇒ T} {h : P ⇒ Q} →
-    (g ⊗₁ id {Z}) ∘ (h ⊗₁ id {Z}) ≈ (g ∘ h) ⊗₁ id {Z}
-  ⊗id-∘ = ⟺ ⊗-distrib-over-∘ ○ (Equiv.refl ⟩⊗⟨ identity²)
-
 -- The opposite, i.e. merge
 merge₁ʳ : ∀ {X₁ Y₁ Z₁ X₂ Y₂} {f : Y₁ ⇒ Z₁} {g : X₁ ⇒ Y₁} {h : X₂ ⇒ Y₂} →
           f ⊗₁ h ∘ g ⊗₁ id ≈ (f ∘ g) ⊗₁ h
@@ -174,6 +161,18 @@ merge₂ʳ = Equiv.sym split₂ʳ
 merge₂ˡ : ∀ {X₁ Y₁ X₂ Y₂ Z₂} {f : X₁ ⇒ Y₁} {g : Y₂ ⇒ Z₂} {h : X₂ ⇒ Y₂} →
           id ⊗₁ g ∘ f ⊗₁ h ≈ f ⊗₁ (g ∘ h)
 merge₂ˡ = Equiv.sym split₂ˡ
+
+module TensorIdentity where
+  id⊗id : id {X} ⊗₁ id {Y} ≈ id {X ⊗₀ Y}
+  id⊗id = Monoidal.⊗.identity M
+
+  ⊗id-∘ : ∀ {X Y Z W} {f : Y ⇒ Z} {g : X ⇒ Y} →
+    (f ∘ g) ⊗₁ id {W} ≈ (f ⊗₁ id {W}) ∘ (g ⊗₁ id {W})
+  ⊗id-∘ = split₁ʳ
+
+  whisker-∘ : ∀ {X Y Z W} {f : Y ⇒ Z} {g : X ⇒ Y} →
+    id {W} ⊗₁ (f ∘ g) ≈ (id {W} ⊗₁ f) ∘ (id {W} ⊗₁ g)
+  whisker-∘ = split₂ˡ
 
 -- Combined splitting and re-association.
 

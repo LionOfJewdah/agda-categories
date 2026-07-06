@@ -43,6 +43,12 @@ record LeftRigid : Set (levelOfTerm M) where
              ≈ id
              ⟩
 
+  -- dual on morphisms: given f : X ⇒ Y, produce f-dual : Y⁻¹ ⇒ X⁻¹
+  dual₁ : ∀ {X Y} → X ⇒ Y → Y ⁻¹ ⇒ X ⁻¹
+  dual₁ {X} {Y} f =
+    unitorˡ.from ∘ (ε {Y} ⊗₁ id {X ⁻¹}) ∘ associator.to
+      ∘ (id {Y ⁻¹} ⊗₁ ((f ⊗₁ id {X ⁻¹}) ∘ η {X})) ∘ unitorʳ.to
+
 -- right rigid monoidal category
 record RightRigid : Set (levelOfTerm M) where
   open Monoidal M public
@@ -68,3 +74,9 @@ record RightRigid : Set (levelOfTerm M) where
                unitorʳ.from
              ≈ id
              ⟩
+
+  dual₁ : ∀ {X Y} → X ⇒ Y → Y ⁻¹ ⇒ X ⁻¹
+  dual₁ {X} {Y} f =
+    unitorʳ.from ∘ (id {X ⁻¹} ⊗₁ ε {Y})
+      ∘ (id {X ⁻¹} ⊗₁ (f ⊗₁ id {Y ⁻¹}))
+      ∘ associator.from ∘ (η {X} ⊗₁ id {Y ⁻¹}) ∘ unitorˡ.to
