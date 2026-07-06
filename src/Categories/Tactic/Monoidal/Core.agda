@@ -29,7 +29,7 @@ module Categories.Tactic.Monoidal.Core
   where
 
 open import Data.Product using (_,_)
-open import Data.List.Base using (List; []; _∷_; _++_; ++-[]-rawMonoid)
+open import Data.List.Base using (List; []; _∷_; _++_; foldr; ++-[]-rawMonoid)
 open import Relation.Binary.PropositionalEquality
   using (_≡_; refl; cong)
 open import Algebra.Bundles using (Monoid)
@@ -69,8 +69,7 @@ private
 -- multiplicativity square, not its coherence.
 
 eval : List Atom → Obj
-eval []       = unit
-eval (x ∷ xs) = ⟦ x ⟧ₐ ⊗₀ eval xs
+eval = foldr (λ x xs → ⟦ x ⟧ₐ ⊗₀ xs) unit
 
 eval-homo : (x y : List Atom) → eval (x ++ y) ≅ eval x ⊗₀ eval y
 eval-homo []       y = ≅.sym unitorˡ
