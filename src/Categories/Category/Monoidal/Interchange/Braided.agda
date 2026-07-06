@@ -48,6 +48,27 @@ open BraidedProps.Shorthands B  -- for σ⇒, ...
 swapˡ : X ⊗₀ (Y ⊗₀ Z) ⇒ Y ⊗₀ (X ⊗₀ Z)
 swapˡ = α⇒ ∘ σ⇒ ⊗₁ id ∘ α⇐
 
+private
+  swapˡ-hexagon₂ :
+    (α⇐ ∘ σ⇒ {X ⊗₀ Y} {Z}) ∘ α⇐
+    ≈ (σ⇒ {X} {Z} ⊗₁ id ∘ α⇐) ∘ id ⊗₁ σ⇒ {Y} {Z}
+  swapˡ-hexagon₂ = ⟺ hexagon₂
+
+swapˡ-hexagon : σ⇒ {X ⊗₀ Y} {Z} ∘ α⇐ {X} {Y} {Z}
+                ≈ swapˡ {X} {Z} {Y} ∘ id ⊗₁ σ⇒ {Y} {Z}
+swapˡ-hexagon {X} {Y} {Z} = begin
+  σ⇒ ∘ α⇐
+    ≈˘⟨ cancelˡ (α.isoʳ {Z} {X} {Y}) ⟩
+  α⇒ ∘ (α⇐ ∘ (σ⇒ ∘ α⇐))
+    ≈⟨ refl⟩∘⟨ sym-assoc ⟩
+  α⇒ ∘ ((α⇐ ∘ σ⇒ {X ⊗₀ Y} {Z}) ∘ α⇐)
+    ≈⟨ refl⟩∘⟨ swapˡ-hexagon₂ {X} {Y} {Z} ⟩
+  α⇒ ∘ ((σ⇒ {X} {Z} ⊗₁ id ∘ α⇐)
+    ∘ id ⊗₁ σ⇒ {Y} {Z})
+    ≈⟨ sym-assoc ⟩
+  swapˡ ∘ id ⊗₁ σ⇒
+    ∎
+
 swapˡ-natural : swapˡ ∘ g ⊗₁ (h ⊗₁ i) ≈ h ⊗₁ (g ⊗₁ i) ∘ swapˡ
 swapˡ-natural {g = g} {h = h} {i = i} = begin
   (α⇒ ∘ σ⇒ ⊗₁ id ∘ α⇐) ∘ g ⊗₁ (h ⊗₁ i)    ≈⟨ pullʳ (pullʳ assoc-commute-to) ⟩
@@ -74,6 +95,10 @@ module swapInner {W X Y Z} = _≅_ (swapInner {W} {X} {Y} {Z})
 private
   i⇒ = swapInner.from
   i⇐ = swapInner.to
+
+swapInner-openˡ : α⇒ {W} {Y} {X ⊗₀ Z} ∘ swapInner.from {W} {X} {Y} {Z}
+                  ≈ (id {W} ⊗₁ swapˡ {X} {Y} {Z}) ∘ α⇒ {W} {X} {Y ⊗₀ Z}
+swapInner-openˡ = cancelˡ α.isoʳ
 
 swapInner-natural : i⇒ ∘ (f ⊗₁ g) ⊗₁ (h ⊗₁ i) ≈ (f ⊗₁ h) ⊗₁ (g ⊗₁ i) ∘ i⇒
 swapInner-natural {f = f} {g = g} {h = h} {i = i} = begin
@@ -348,7 +373,8 @@ swapInner-unitˡ = begin
       (ρ⇒ ⊗₁ id) ⊗₁ id ∘ α⇐                             ≈˘⟨ assoc-commute-to ⟩
       α⇐ ∘ ρ⇒ ⊗₁ (id ⊗₁ id)
     ∎)) ⟩∘⟨refl ⟩
-    (λ⇒ ⊗₁ id ∘ α⇐ ∘ ρ⇒ ⊗₁ (id ⊗₁ id)) ∘ ρ⇐ ⊗₁ id   ≈⟨ (sym-assoc ○ (Kelly₁′ ⟩∘⟨ refl⟩⊗⟨ ⊗.identity)) ⟩∘⟨refl ⟩
+    (λ⇒ ⊗₁ id ∘ α⇐ ∘ ρ⇒ ⊗₁ (id ⊗₁ id)) ∘ ρ⇐ ⊗₁ id   ≈⟨ sym-assoc ⟩∘⟨refl ⟩
+    ((λ⇒ ⊗₁ id ∘ α⇐) ∘ ρ⇒ ⊗₁ (id ⊗₁ id)) ∘ ρ⇐ ⊗₁ id ≈⟨ (Kelly₁′ ⟩∘⟨ refl⟩⊗⟨ ⊗.identity) ⟩∘⟨refl ⟩
     (λ⇒ ∘ ρ⇒ ⊗₁ id) ∘ ρ⇐ ⊗₁ id                       ≈⟨ cancelʳ (_≅_.isoʳ (unitorʳ ⊗ᵢ idᵢ)) ⟩
     λ⇒
   ∎
@@ -369,7 +395,8 @@ swapInner-unitʳ = begin
       id ⊗₁ (id ⊗₁ λ⇒) ∘ α⇒                                             ≈˘⟨ assoc-commute-from ⟩
       α⇒ ∘ (id ⊗₁ id) ⊗₁ λ⇒                                             ≈⟨ refl⟩∘⟨ ⊗.identity ⟩⊗⟨refl ⟩
       α⇒ ∘ id ⊗₁ λ⇒                                                     ∎)) ⟩∘⟨refl ⟩
-    (id ⊗₁ ρ⇒ ∘ α⇒ ∘ id ⊗₁ λ⇒) ∘ id ⊗₁ λ⇐                    ≈⟨ (sym-assoc ○ (Kelly's.coherence₂ M ⟩∘⟨refl )) ⟩∘⟨refl ⟩
+    (id ⊗₁ ρ⇒ ∘ α⇒ ∘ id ⊗₁ λ⇒) ∘ id ⊗₁ λ⇐                    ≈⟨ sym-assoc ⟩∘⟨refl ⟩
+    ((id ⊗₁ ρ⇒ ∘ α⇒) ∘ id ⊗₁ λ⇒) ∘ id ⊗₁ λ⇐                  ≈⟨ (Kelly's.coherence₂ M ⟩∘⟨refl) ⟩∘⟨refl ⟩
     (ρ⇒ ∘ id ⊗₁ λ⇒) ∘ id ⊗₁ λ⇐                                ≈⟨ cancelʳ (_≅_.isoʳ (idᵢ ⊗ᵢ unitorˡ)) ⟩
     ρ⇒                                                         ∎
 
