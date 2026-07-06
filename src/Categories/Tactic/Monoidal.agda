@@ -32,6 +32,8 @@ open import Reflection.TCM.Syntax
 
 open import Categories.Tactic.Monoidal.Core public
 open import Categories.Tactic.Monoidal.Coherence public
+open import Categories.Tactic.Monoidal.Expression public
+  using (solveMonoidalExpr)
 
 import Categories.Tactic.Monoidal.Core as Core
 open import Categories.Tactic.Monoidal.Free using (module Free)
