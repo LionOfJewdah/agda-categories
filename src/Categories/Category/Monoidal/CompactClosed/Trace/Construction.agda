@@ -43,75 +43,12 @@ private
   variable
     A B X Y Z : Obj
 
-  ------------------------------------------------------------------------
-  -- Bending a wire.  Every trace here opens a cup on the right of `A` with
-  -- `cup-openʳ`, runs the map along the resulting loop, and closes a cap with
-  -- `cap-closeʳ`; only the cup/cap pair changes.
-
-  ⇒⦑_⦒⇐ : A ⊗₀ X ⇒ B ⊗₀ X → A ⊗₀ (X ⊗₀ Z) ⇒ B ⊗₀ (X ⊗₀ Z)
-  ⇒⦑ f ⦒⇐ = α⇒ ∘ (f ⊗₁ id) ∘ α⇐
-
-  -- The trace's own cup and cap.  `cupᵗʳ` is already `α⇐ ∘ cup-openʳ η`; `capᵗʳ`
-  -- closes `ε` after the braiding, so name that cap and fold `capᵗʳ` onto it.
-  capʳ : X ⊗₀ X ⁻¹ ⇒ unit
-  capʳ = ε ∘ σ⇒
-
-  -- `ε` and the braiding fuse into `capʳ`, leaving the cap's own associator.
-  capᵗʳ-fold : capᵗʳ {A} {X} ≈ cap-closeʳ capʳ ∘ α⇒
-  capᵗʳ-fold = (refl⟩∘⟨ pullˡ merge₂ˡ) ○ sym-assoc
-
-  -- ... and that associator joins `f`'s whisker to make the loop `⇒⦑ f ⦒⇐`.
-  trace-fold : {f : A ⊗₀ X ⇒ B ⊗₀ X} →
-    trace f ≈ cap-closeʳ capʳ ∘ ⇒⦑ f ⦒⇐ ∘ cup-openʳ η
-  trace-fold = (capᵗʳ-fold ⟩∘⟨refl) ○ assoc ○ (refl⟩∘⟨ ⟺ assoc²βε)
-
   i⇒ : (A ⊗₀ X) ⊗₀ (Y ⊗₀ B) ⇒ (A ⊗₀ Y) ⊗₀ (X ⊗₀ B)
   i⇒ = swapInner.from
 
   -- At the unit both unitors agree, so the braiding is invisible to `ρ⇒`.
   braiding-coherence-unit : ρ⇒ {unit} ∘ σ⇒ {unit} {unit} ≈ ρ⇒
   braiding-coherence-unit = braiding-coherence′ ○ coherence₃
-
-------------------------------------------------------------------------
--- Superposing.  A wire `Y` running beside the loop never meets it, so it slides
--- out of the trace: tracing `f` with `Y` alongside is `Y` alongside the trace of
--- `f`.  The associators of `capᵗʳ`/`cupᵗʳ` whisker `Y` off, and `α-conj-slide`
--- pushes the whisker through the loop.
---
---     Y      B         X ────────╮            Y          B
---     │      │         │         │            │          │
---     │   ┌──┴─────────┴──┐      │            │       ╭──┴───────────╮
---     │   │       f       │      │      =     │       │   trace f    │
---     │   └──┬─────────┬──┘      │            │       ╰──┬───────────╯
---     │      │         │         │            │          │
---     Y      A         X ────────╯            Y          A
---
---     trace (α⇐ ∘ (id ⊗₁ f) ∘ α⇒)                 id ⊗₁ trace f
-
-superposing : {f : A ⊗₀ X ⇒ B ⊗₀ X} →
-  trace (α⇐ ∘ (id {Y} ⊗₁ f) ∘ α⇒) ≈ id ⊗₁ trace f
-superposing {f = f} = begin
-  capᵗʳ ∘ (superposed ⊗₁ id) ∘ α⇐ ∘ cup-openʳ η
-    ≈⟨ capᵗʳ-fold ⟩∘⟨refl ⟩
-  (cap-closeʳ capʳ ∘ α⇒) ∘ (superposed ⊗₁ id) ∘ α⇐ ∘ cup-openʳ η
-    ≈⟨ cap-closeʳ-assoc ⟩∘⟨refl ⟩∘⟨refl ⟩
-  (((id ⊗₁ cap-closeʳ capʳ) ∘ α⇒) ∘ α⇒) ∘ (superposed ⊗₁ id) ∘ α⇐ ∘ cup-openʳ η
-    ≈⟨ assoc²αε ⟩
-  (id ⊗₁ cap-closeʳ capʳ) ∘ α⇒ ∘ α⇒ ∘ (superposed ⊗₁ id) ∘ α⇐ ∘ cup-openʳ η
-    ≈⟨ refl⟩∘⟨ reassoc-tail₅ ⟩
-  (id ⊗₁ cap-closeʳ capʳ) ∘ (α⇒ ∘ α⇒ ∘ (superposed ⊗₁ id) ∘ α⇐) ∘ cup-openʳ η
-    ≈⟨ refl⟩∘⟨ α-conj-slide ⟩∘⟨refl ⟩
-  (id ⊗₁ cap-closeʳ capʳ) ∘ ((id ⊗₁ ⇒⦑ f ⦒⇐) ∘ α⇒) ∘ cup-openʳ η
-    ≈⟨ refl⟩∘⟨ pullʳ cup-openʳ-natural ⟩
-  (id ⊗₁ cap-closeʳ capʳ) ∘ (id ⊗₁ ⇒⦑ f ⦒⇐) ∘ (id ⊗₁ cup-openʳ η)
-    ≈⟨ refl⟩∘⟨ merge₂ˡ ⟩
-  (id ⊗₁ cap-closeʳ capʳ) ∘ (id ⊗₁ (⇒⦑ f ⦒⇐ ∘ cup-openʳ η))
-    ≈⟨ merge₂ˡ ⟩
-  id ⊗₁ (cap-closeʳ capʳ ∘ ⇒⦑ f ⦒⇐ ∘ cup-openʳ η)
-    ≈˘⟨ refl⟩⊗⟨ trace-fold ⟩
-  id ⊗₁ trace f                                                              ∎
-  where
-    superposed = α⇐ ∘ (id ⊗₁ f) ∘ α⇒
 
 ------------------------------------------------------------------------
 -- Vanishing₂: two loops, taken one at a time, are one loop around both wires.

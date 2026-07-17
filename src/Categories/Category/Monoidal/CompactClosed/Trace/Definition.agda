@@ -30,13 +30,14 @@ open import Categories.Category.Monoidal.Braided.Properties (Symmetric.braided s
   using (braiding-coherence-σ; braiding-coherence-σ′) renaming (module Shorthands to BraidShorthands)
 open import Categories.Category.Monoidal.Rigid.Dual M leftRigid
 open import Categories.Category.Monoidal.Reassociation M
+open import Categories.Category.Monoidal.Traced.PreTrace M using (PreTrace)
 import Categories.Category.Monoidal.Utilities M as MonUtil
 open MonUtil.Shorthands
 open BraidShorthands using (σ⇒; σ⇒-comm)
 
 private
   variable
-    A B C X Y : Obj
+    A B C X Y Z : Obj
 
 -- Diagrams read bottom-to-top: a morphism's inputs are the wires entering from
 -- below, its outputs the wires leaving above.  Duality bends a wire — `η` grows an
@@ -327,3 +328,81 @@ vanishing₁ {f = f} = begin
   f ∘ trace (id ⊗₁ id {unit})                   ≈⟨ refl⟩∘⟨ trace-unit-id ⟩
   f ∘ id                                        ≈⟨ identityʳ ⟩
   f                                             ∎
+
+------------------------------------------------------------------------
+-- Bending a wire.  Every trace here opens a cup on the right of `A` with
+-- `cup-openʳ`, runs the map along the resulting loop, and closes a cap with
+-- `cap-closeʳ`; only the cup/cap pair changes.
+
+⇒⦑_⦒⇐ : A ⊗₀ X ⇒ B ⊗₀ X → A ⊗₀ (X ⊗₀ Z) ⇒ B ⊗₀ (X ⊗₀ Z)
+⇒⦑ f ⦒⇐ = α⇒ ∘ (f ⊗₁ id) ∘ α⇐
+
+-- The trace's own cup and cap.  `cupᵗʳ` is already `α⇐ ∘ cup-openʳ η`; `capᵗʳ`
+-- closes `ε` after the braiding, so name that cap and fold `capᵗʳ` onto it.
+capʳ : X ⊗₀ X ⁻¹ ⇒ unit
+capʳ = ε ∘ σ⇒
+
+-- `ε` and the braiding fuse into `capʳ`, leaving the cap's own associator.
+capᵗʳ-fold : capᵗʳ {A} {X} ≈ cap-closeʳ capʳ ∘ α⇒
+capᵗʳ-fold = (refl⟩∘⟨ pullˡ merge₂ˡ) ○ sym-assoc
+
+-- ... and that associator joins `f`'s whisker to make the loop `⇒⦑ f ⦒⇐`.
+trace-fold : {f : A ⊗₀ X ⇒ B ⊗₀ X} →
+  trace f ≈ cap-closeʳ capʳ ∘ ⇒⦑ f ⦒⇐ ∘ cup-openʳ η
+trace-fold = (capᵗʳ-fold ⟩∘⟨refl) ○ assoc ○ (refl⟩∘⟨ ⟺ assoc²βε)
+
+------------------------------------------------------------------------
+-- Superposing.  A wire `Y` running beside the loop never meets it, so it slides
+-- out of the trace: tracing `f` with `Y` alongside is `Y` alongside the trace of
+-- `f`.  The associators of `capᵗʳ`/`cupᵗʳ` whisker `Y` off, and `α-conj-slide`
+-- pushes the whisker through the loop.
+--
+--     Y      B         X ────────╮            Y          B
+--     │      │         │         │            │          │
+--     │   ┌──┴─────────┴──┐      │            │       ╭──┴───────────╮
+--     │   │       f       │      │      =     │       │   trace f    │
+--     │   └──┬─────────┬──┘      │            │       ╰──┬───────────╯
+--     │      │         │         │            │          │
+--     Y      A         X ────────╯            Y          A
+--
+--     trace (α⇐ ∘ (id ⊗₁ f) ∘ α⇒)                 id ⊗₁ trace f
+
+superposing : {f : A ⊗₀ X ⇒ B ⊗₀ X} →
+  trace (α⇐ ∘ (id {Y} ⊗₁ f) ∘ α⇒) ≈ id ⊗₁ trace f
+superposing {f = f} = begin
+  capᵗʳ ∘ (superposed ⊗₁ id) ∘ α⇐ ∘ cup-openʳ η
+    ≈⟨ capᵗʳ-fold ⟩∘⟨refl ⟩
+  (cap-closeʳ capʳ ∘ α⇒) ∘ (superposed ⊗₁ id) ∘ α⇐ ∘ cup-openʳ η
+    ≈⟨ cap-closeʳ-assoc ⟩∘⟨refl ⟩∘⟨refl ⟩
+  (((id ⊗₁ cap-closeʳ capʳ) ∘ α⇒) ∘ α⇒) ∘ (superposed ⊗₁ id) ∘ α⇐ ∘ cup-openʳ η
+    ≈⟨ assoc²αε ⟩
+  (id ⊗₁ cap-closeʳ capʳ) ∘ α⇒ ∘ α⇒ ∘ (superposed ⊗₁ id) ∘ α⇐ ∘ cup-openʳ η
+    ≈⟨ refl⟩∘⟨ reassoc-tail₅ ⟩
+  (id ⊗₁ cap-closeʳ capʳ) ∘ (α⇒ ∘ α⇒ ∘ (superposed ⊗₁ id) ∘ α⇐) ∘ cup-openʳ η
+    ≈⟨ refl⟩∘⟨ α-conj-slide ⟩∘⟨refl ⟩
+  (id ⊗₁ cap-closeʳ capʳ) ∘ ((id ⊗₁ ⇒⦑ f ⦒⇐) ∘ α⇒) ∘ cup-openʳ η
+    ≈⟨ refl⟩∘⟨ pullʳ cup-openʳ-natural ⟩
+  (id ⊗₁ cap-closeʳ capʳ) ∘ (id ⊗₁ ⇒⦑ f ⦒⇐) ∘ (id ⊗₁ cup-openʳ η)
+    ≈⟨ refl⟩∘⟨ merge₂ˡ ⟩
+  (id ⊗₁ cap-closeʳ capʳ) ∘ (id ⊗₁ (⇒⦑ f ⦒⇐ ∘ cup-openʳ η))
+    ≈⟨ merge₂ˡ ⟩
+  id ⊗₁ (cap-closeʳ capʳ ∘ ⇒⦑ f ⦒⇐ ∘ cup-openʳ η)
+    ≈˘⟨ refl⟩⊗⟨ trace-fold ⟩
+  id ⊗₁ trace f                                                              ∎
+  where
+    superposed = α⇐ ∘ (id ⊗₁ f) ∘ α⇒
+
+------------------------------------------------------------------------
+-- The canonical trace, packaged.  It is a full trace but for `vanishing₂`
+-- (`Trace.Construction`); the axioms above already make it a `PreTrace`, which is
+-- all `Trace.Uniqueness` needs to pin it down as the *only* trace here.
+
+preTrace : PreTrace symmetric
+preTrace = record
+  { trace        = trace
+  ; trace-resp-≈ = trace-resp-≈
+  ; tightenₗ     = tightenₗ
+  ; tightenᵣ     = tightenᵣ
+  ; superposing  = superposing
+  ; yanking      = yanking
+  }
