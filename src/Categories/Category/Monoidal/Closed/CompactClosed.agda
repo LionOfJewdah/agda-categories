@@ -1,7 +1,7 @@
 {-# OPTIONS --without-K --safe #-}
 
-open import Categories.Category using (Category)
-open import Categories.Category.Monoidal using (Monoidal)
+open import Categories.Category.Core using (Category)
+open import Categories.Category.Monoidal.Core using (Monoidal)
 open import Categories.Category.Monoidal.Closed using (Closed)
 
 -- Recognizing compact closure.  A monoidal closed category in which every object
@@ -64,15 +64,15 @@ _* : Obj → Obj
 X * = [ X , unit ]₀
 
 can : unit ⇒ unit ⊗₀ unit *
-can = (id ⊗₁ j) ∘ ρ⇐
+can = (id ⊗₁ ⌜id⌝) ∘ ρ⇐
 
 module _ (t : ∀ {X} → unit ⇒ X ⊗₀ X *)
     -- Extranaturality: as maps `[ X , Y ]₀ ⇒ Y ⊗₀ X *`, handing a function its
     -- own unit and evaluating agrees with taking the unit of its target and
     -- composing.
     (t-extranatural : ∀ {X Y} →
-       (ev ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t {X}) ∘ ρ⇐
-     ≈ (id ⊗₁ comp) ∘ α⇒ ∘ (t {Y} ⊗₁ id) ∘ λ⇐)
+       (eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t {X}) ∘ ρ⇐
+     ≈ (id ⊗₁ internal-∘) ∘ α⇒ ∘ (t {Y} ⊗₁ id) ∘ λ⇐)
     (t-unit : t {unit} ≈ can)
     where
 
@@ -81,22 +81,22 @@ module _ (t : ∀ {X} → unit ⇒ X ⊗₀ X *)
   -- composite; its right-hand side collapses, because composing with the
   -- internal identity is a unitor.
 
-  snake₂ : λ⇒ ∘ (ev ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t {X}) ∘ ρ⇐ ≈ id {X *}
+  snake₂ : λ⇒ ∘ (eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t {X}) ∘ ρ⇐ ≈ id {X *}
   snake₂ = begin
-    λ⇒ ∘ (ev ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t) ∘ ρ⇐
+    λ⇒ ∘ (eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t) ∘ ρ⇐
       ≈⟨ refl⟩∘⟨ t-extranatural ⟩
-    λ⇒ ∘ (id ⊗₁ comp) ∘ α⇒ ∘ (t {unit} ⊗₁ id) ∘ λ⇐
+    λ⇒ ∘ (id ⊗₁ internal-∘) ∘ α⇒ ∘ (t {unit} ⊗₁ id) ∘ λ⇐
       ≈⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ (t-unit ⟩⊗⟨refl) ⟩∘⟨refl ⟩
-    λ⇒ ∘ (id ⊗₁ comp) ∘ α⇒ ∘ (((id ⊗₁ j) ∘ ρ⇐) ⊗₁ id) ∘ λ⇐
+    λ⇒ ∘ (id ⊗₁ internal-∘) ∘ α⇒ ∘ (((id ⊗₁ ⌜id⌝) ∘ ρ⇐) ⊗₁ id) ∘ λ⇐
       ≈⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ pushˡ split₁ˡ ⟩
-    λ⇒ ∘ (id ⊗₁ comp) ∘ α⇒ ∘ ((id ⊗₁ j) ⊗₁ id) ∘ (ρ⇐ ⊗₁ id) ∘ λ⇐
+    λ⇒ ∘ (id ⊗₁ internal-∘) ∘ α⇒ ∘ ((id ⊗₁ ⌜id⌝) ⊗₁ id) ∘ (ρ⇐ ⊗₁ id) ∘ λ⇐
       ≈⟨ refl⟩∘⟨ refl⟩∘⟨ extendʳ assoc-commute-from ⟩
-    λ⇒ ∘ (id ⊗₁ comp) ∘ (id ⊗₁ (j ⊗₁ id)) ∘ α⇒ ∘ (ρ⇐ ⊗₁ id) ∘ λ⇐
+    λ⇒ ∘ (id ⊗₁ internal-∘) ∘ (id ⊗₁ (⌜id⌝ ⊗₁ id)) ∘ α⇒ ∘ (ρ⇐ ⊗₁ id) ∘ λ⇐
       ≈⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ pullˡ triangle-invʳ ⟩
-    λ⇒ ∘ (id ⊗₁ comp) ∘ (id ⊗₁ (j ⊗₁ id)) ∘ (id ⊗₁ λ⇐) ∘ λ⇐
+    λ⇒ ∘ (id ⊗₁ internal-∘) ∘ (id ⊗₁ (⌜id⌝ ⊗₁ id)) ∘ (id ⊗₁ λ⇐) ∘ λ⇐
       ≈⟨ refl⟩∘⟨ pullˡ merge₂ˡ ⟩
-    λ⇒ ∘ (id ⊗₁ (comp ∘ (j ⊗₁ id))) ∘ (id ⊗₁ λ⇐) ∘ λ⇐
-      ≈⟨ refl⟩∘⟨ (refl⟩⊗⟨ comp-idˡ) ⟩∘⟨refl ⟩
+    λ⇒ ∘ (id ⊗₁ (internal-∘ ∘ (⌜id⌝ ⊗₁ id))) ∘ (id ⊗₁ λ⇐) ∘ λ⇐
+      ≈⟨ refl⟩∘⟨ (refl⟩⊗⟨ internal-∘-idˡ) ⟩∘⟨refl ⟩
     λ⇒ ∘ (id ⊗₁ λ⇒) ∘ (id ⊗₁ λ⇐) ∘ λ⇐              ≈⟨ refl⟩∘⟨ pullˡ merge₂ˡ ⟩
     λ⇒ ∘ (id ⊗₁ (λ⇒ ∘ λ⇐)) ∘ λ⇐                    ≈⟨ refl⟩∘⟨ (refl⟩⊗⟨ unitorˡ.isoʳ) ⟩∘⟨refl ⟩
     λ⇒ ∘ (id ⊗₁ id) ∘ λ⇐                           ≈⟨ refl⟩∘⟨ elimˡ ⊗.identity ⟩
@@ -113,83 +113,83 @@ module _ (t : ∀ {X} → unit ⇒ X ⊗₀ X *)
     -- Conjugation: a map `[ unit , X ]₀ ⇒ X ⊗₀ [ unit , unit ]₀`, read as a map
     -- `X ⇒ X` by naming the argument and un-naming the result.
     conj : ([ unit , X ]₀ ⇒ X ⊗₀ unit *) → (X ⇒ X)
-    conj h = ρ⇒ ∘ (id ⊗₁ i⇐) ∘ h ∘ i⇒
+    conj h = ρ⇒ ∘ (id ⊗₁ unit-hom⇐) ∘ h ∘ unit-hom⇒
 
     -- The hexagon's right-hand side: `i⇒` slides through to meet `comp`, and
     -- `comp-i` turns the two of them back into `ev`.
-    conj-right : conj ((id ⊗₁ comp) ∘ α⇒ ∘ (t {X} ⊗₁ id) ∘ λ⇐)
-               ≈ ρ⇒ ∘ (id ⊗₁ ev) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
+    conj-right : conj ((id ⊗₁ internal-∘) ∘ α⇒ ∘ (t {X} ⊗₁ id) ∘ λ⇐)
+               ≈ ρ⇒ ∘ (id ⊗₁ eval) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
     conj-right = begin
-      ρ⇒ ∘ (id ⊗₁ i⇐) ∘ ((id ⊗₁ comp) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐) ∘ i⇒
+      ρ⇒ ∘ (id ⊗₁ unit-hom⇐) ∘ ((id ⊗₁ internal-∘) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐) ∘ unit-hom⇒
         ≈⟨ refl⟩∘⟨ refl⟩∘⟨ name-slide ⟩
-      ρ⇒ ∘ (id ⊗₁ i⇐) ∘ (id ⊗₁ (comp ∘ (id ⊗₁ i⇒))) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
+      ρ⇒ ∘ (id ⊗₁ unit-hom⇐) ∘ (id ⊗₁ (internal-∘ ∘ (id ⊗₁ unit-hom⇒))) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
         ≈⟨ refl⟩∘⟨ pullˡ merge₂ˡ ⟩
-      ρ⇒ ∘ (id ⊗₁ (i⇐ ∘ comp ∘ (id ⊗₁ i⇒))) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
-        ≈⟨ refl⟩∘⟨ (refl⟩⊗⟨ comp-i) ⟩∘⟨refl ⟩
-      ρ⇒ ∘ (id ⊗₁ ev) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐        ∎
+      ρ⇒ ∘ (id ⊗₁ (unit-hom⇐ ∘ internal-∘ ∘ (id ⊗₁ unit-hom⇒))) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
+        ≈⟨ refl⟩∘⟨ (refl⟩⊗⟨ internal-∘-unit-hom) ⟩∘⟨refl ⟩
+      ρ⇒ ∘ (id ⊗₁ eval) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐        ∎
       where
         -- The named argument travels from the far right of the composite to the
         -- inside of `comp`, past `t` and the associator.
-        name-slide : ((id ⊗₁ comp) ∘ α⇒ ∘ (t {X} ⊗₁ id) ∘ λ⇐) ∘ i⇒
-                   ≈ (id ⊗₁ (comp ∘ (id ⊗₁ i⇒))) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
+        name-slide : ((id ⊗₁ internal-∘) ∘ α⇒ ∘ (t {X} ⊗₁ id) ∘ λ⇐) ∘ unit-hom⇒
+                   ≈ (id ⊗₁ (internal-∘ ∘ (id ⊗₁ unit-hom⇒))) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
         name-slide = begin
-          ((id ⊗₁ comp) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐) ∘ i⇒       ≈⟨ ⟺ reassoc-tail₅ ⟩
-          (id ⊗₁ comp) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐ ∘ i⇒
+          ((id ⊗₁ internal-∘) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐) ∘ unit-hom⇒       ≈⟨ ⟺ reassoc-tail₅ ⟩
+          (id ⊗₁ internal-∘) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐ ∘ unit-hom⇒
             ≈⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ unitorˡ-commute-to ⟩
-          (id ⊗₁ comp) ∘ α⇒ ∘ (t ⊗₁ id) ∘ (id ⊗₁ i⇒) ∘ λ⇐
+          (id ⊗₁ internal-∘) ∘ α⇒ ∘ (t ⊗₁ id) ∘ (id ⊗₁ unit-hom⇒) ∘ λ⇐
             ≈⟨ refl⟩∘⟨ refl⟩∘⟨ pullˡ whisker-comm ⟩
-          (id ⊗₁ comp) ∘ α⇒ ∘ ((id ⊗₁ i⇒) ∘ (t ⊗₁ id)) ∘ λ⇐  ≈⟨ refl⟩∘⟨ refl⟩∘⟨ assoc ⟩
-          (id ⊗₁ comp) ∘ α⇒ ∘ (id ⊗₁ i⇒) ∘ (t ⊗₁ id) ∘ λ⇐
+          (id ⊗₁ internal-∘) ∘ α⇒ ∘ ((id ⊗₁ unit-hom⇒) ∘ (t ⊗₁ id)) ∘ λ⇐  ≈⟨ refl⟩∘⟨ refl⟩∘⟨ assoc ⟩
+          (id ⊗₁ internal-∘) ∘ α⇒ ∘ (id ⊗₁ unit-hom⇒) ∘ (t ⊗₁ id) ∘ λ⇐
             ≈⟨ refl⟩∘⟨ pullˡ α⇒-id⊗-commute ⟩
-          (id ⊗₁ comp) ∘ ((id ⊗₁ (id ⊗₁ i⇒)) ∘ α⇒) ∘ (t ⊗₁ id) ∘ λ⇐
+          (id ⊗₁ internal-∘) ∘ ((id ⊗₁ (id ⊗₁ unit-hom⇒)) ∘ α⇒) ∘ (t ⊗₁ id) ∘ λ⇐
             ≈⟨ refl⟩∘⟨ assoc ⟩
-          (id ⊗₁ comp) ∘ (id ⊗₁ (id ⊗₁ i⇒)) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐  ≈⟨ pullˡ merge₂ˡ ⟩
-          (id ⊗₁ (comp ∘ (id ⊗₁ i⇒))) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐        ∎
+          (id ⊗₁ internal-∘) ∘ (id ⊗₁ (id ⊗₁ unit-hom⇒)) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐  ≈⟨ pullˡ merge₂ˡ ⟩
+          (id ⊗₁ (internal-∘ ∘ (id ⊗₁ unit-hom⇒))) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐        ∎
 
     -- The hexagon's left-hand side: with `t {unit}` canonical, everything cancels
     -- and only `i` against its own inverse is left.
-    conj-left : conj ((ev ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t {unit}) ∘ ρ⇐) ≈ id {X}
+    conj-left : conj ((eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t {unit}) ∘ ρ⇐) ≈ id {X}
     conj-left = begin
-      ρ⇒ ∘ (id ⊗₁ i⇐) ∘ ((ev ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t) ∘ ρ⇐) ∘ i⇒
+      ρ⇒ ∘ (id ⊗₁ unit-hom⇐) ∘ ((eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t) ∘ ρ⇐) ∘ unit-hom⇒
         ≈⟨ refl⟩∘⟨ refl⟩∘⟨ unit-fold ⟩∘⟨refl ⟩
-      ρ⇒ ∘ (id ⊗₁ i⇐) ∘ ((ev ⊗₁ id) ∘ (id ⊗₁ j) ∘ ρ⇐ ∘ ρ⇐) ∘ i⇒
+      ρ⇒ ∘ (id ⊗₁ unit-hom⇐) ∘ ((eval ⊗₁ id) ∘ (id ⊗₁ ⌜id⌝) ∘ ρ⇐ ∘ ρ⇐) ∘ unit-hom⇒
         ≈⟨ refl⟩∘⟨ refl⟩∘⟨ pullˡ (merge₂ʳ ○ (refl⟩⊗⟨ identityˡ)) ⟩∘⟨refl ⟩
-      ρ⇒ ∘ (id ⊗₁ i⇐) ∘ ((ev ⊗₁ j) ∘ ρ⇐ ∘ ρ⇐) ∘ i⇒
-        ≈⟨ refl⟩∘⟨ pullˡ (pullˡ (merge₂ˡ ○ (refl⟩⊗⟨ i⇐-j))) ⟩
-      ρ⇒ ∘ ((ev ⊗₁ id) ∘ ρ⇐ ∘ ρ⇐) ∘ i⇒               ≈⟨ refl⟩∘⟨ assoc²βε ⟩
-      ρ⇒ ∘ (ev ⊗₁ id) ∘ ρ⇐ ∘ ρ⇐ ∘ i⇒                 ≈⟨ pullˡ unitorʳ-commute-from ⟩
-      (ev ∘ ρ⇒) ∘ ρ⇐ ∘ ρ⇐ ∘ i⇒                       ≈⟨ assoc ⟩
-      ev ∘ ρ⇒ ∘ ρ⇐ ∘ ρ⇐ ∘ i⇒                         ≈⟨ refl⟩∘⟨ cancelˡ unitorʳ.isoʳ ⟩
-      ev ∘ ρ⇐ ∘ i⇒                                   ≈⟨ sym-assoc ⟩
-      (ev ∘ ρ⇐) ∘ i⇒                                 ≈⟨ i-isoˡ ⟩
+      ρ⇒ ∘ (id ⊗₁ unit-hom⇐) ∘ ((eval ⊗₁ ⌜id⌝) ∘ ρ⇐ ∘ ρ⇐) ∘ unit-hom⇒
+        ≈⟨ refl⟩∘⟨ pullˡ (pullˡ (merge₂ˡ ○ (refl⟩⊗⟨ unit-hom⇐-⌜id⌝))) ⟩
+      ρ⇒ ∘ ((eval ⊗₁ id) ∘ ρ⇐ ∘ ρ⇐) ∘ unit-hom⇒               ≈⟨ refl⟩∘⟨ assoc²βε ⟩
+      ρ⇒ ∘ (eval ⊗₁ id) ∘ ρ⇐ ∘ ρ⇐ ∘ unit-hom⇒                 ≈⟨ pullˡ unitorʳ-commute-from ⟩
+      (eval ∘ ρ⇒) ∘ ρ⇐ ∘ ρ⇐ ∘ unit-hom⇒                       ≈⟨ assoc ⟩
+      eval ∘ ρ⇒ ∘ ρ⇐ ∘ ρ⇐ ∘ unit-hom⇒                         ≈⟨ refl⟩∘⟨ cancelˡ unitorʳ.isoʳ ⟩
+      eval ∘ ρ⇐ ∘ unit-hom⇒                                   ≈⟨ sym-assoc ⟩
+      (eval ∘ ρ⇐) ∘ unit-hom⇒                                 ≈⟨ unit-hom-isoˡ ⟩
       id                                             ∎
       where
         -- The canonical `t {unit}`, unwound: its `j` floats out to the left and
         -- its unitor merges with the associator.
-        unit-fold : (ev ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t {unit}) ∘ ρ⇐
-                  ≈ (ev {unit} {X} ⊗₁ id) ∘ (id ⊗₁ j) ∘ ρ⇐ ∘ ρ⇐
+        unit-fold : (eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t {unit}) ∘ ρ⇐
+                  ≈ (eval {unit} {X} ⊗₁ id) ∘ (id ⊗₁ ⌜id⌝) ∘ ρ⇐ ∘ ρ⇐
         unit-fold = begin
-          (ev ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t) ∘ ρ⇐
+          (eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t) ∘ ρ⇐
             ≈⟨ refl⟩∘⟨ refl⟩∘⟨ (refl⟩⊗⟨ t-unit) ⟩∘⟨refl ⟩
-          (ev ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ ((id ⊗₁ j) ∘ ρ⇐)) ∘ ρ⇐
+          (eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ ((id ⊗₁ ⌜id⌝) ∘ ρ⇐)) ∘ ρ⇐
             ≈⟨ refl⟩∘⟨ refl⟩∘⟨ split₂ˡ ⟩∘⟨refl ⟩
-          (ev ⊗₁ id) ∘ α⇐ ∘ ((id ⊗₁ (id ⊗₁ j)) ∘ (id ⊗₁ ρ⇐)) ∘ ρ⇐
+          (eval ⊗₁ id) ∘ α⇐ ∘ ((id ⊗₁ (id ⊗₁ ⌜id⌝)) ∘ (id ⊗₁ ρ⇐)) ∘ ρ⇐
             ≈⟨ refl⟩∘⟨ refl⟩∘⟨ assoc ⟩
-          (ev ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ (id ⊗₁ j)) ∘ (id ⊗₁ ρ⇐) ∘ ρ⇐
+          (eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ (id ⊗₁ ⌜id⌝)) ∘ (id ⊗₁ ρ⇐) ∘ ρ⇐
             ≈⟨ refl⟩∘⟨ pullˡ (⟺ α⇐-id⊗-commute) ⟩
-          (ev ⊗₁ id) ∘ ((id ⊗₁ j) ∘ α⇐) ∘ (id ⊗₁ ρ⇐) ∘ ρ⇐
+          (eval ⊗₁ id) ∘ ((id ⊗₁ ⌜id⌝) ∘ α⇐) ∘ (id ⊗₁ ρ⇐) ∘ ρ⇐
             ≈⟨ refl⟩∘⟨ assoc ⟩
-          (ev ⊗₁ id) ∘ (id ⊗₁ j) ∘ α⇐ ∘ (id ⊗₁ ρ⇐) ∘ ρ⇐
+          (eval ⊗₁ id) ∘ (id ⊗₁ ⌜id⌝) ∘ α⇐ ∘ (id ⊗₁ ρ⇐) ∘ ρ⇐
             ≈⟨ refl⟩∘⟨ refl⟩∘⟨ pullˡ ρ⇐-collapse ⟩
-          (ev ⊗₁ id) ∘ (id ⊗₁ j) ∘ ρ⇐ ∘ ρ⇐                ∎
+          (eval ⊗₁ id) ∘ (id ⊗₁ ⌜id⌝) ∘ ρ⇐ ∘ ρ⇐                ∎
 
-  snake₁ : ρ⇒ ∘ (id ⊗₁ ev) ∘ α⇒ ∘ (t {X} ⊗₁ id) ∘ λ⇐ ≈ id {X}
+  snake₁ : ρ⇒ ∘ (id ⊗₁ eval) ∘ α⇒ ∘ (t {X} ⊗₁ id) ∘ λ⇐ ≈ id {X}
   snake₁ = begin
-    ρ⇒ ∘ (id ⊗₁ ev) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
+    ρ⇒ ∘ (id ⊗₁ eval) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
       ≈˘⟨ conj-right ⟩
-    conj ((id ⊗₁ comp) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐)
+    conj ((id ⊗₁ internal-∘) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐)
       ≈˘⟨ refl⟩∘⟨ refl⟩∘⟨ t-extranatural ⟩∘⟨refl ⟩
-    conj ((ev ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t {unit}) ∘ ρ⇐)
+    conj ((eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t {unit}) ∘ ρ⇐)
       ≈⟨ conj-left ⟩
     id                                     ∎
 
@@ -199,7 +199,7 @@ module _ (t : ∀ {X} → unit ⇒ X ⊗₀ X *)
   leftRigid = record
     { _⁻¹    = _*
     ; η      = t
-    ; ε      = ev
+    ; ε      = eval
     ; snake₁ = snake₁
     ; snake₂ = snake₂
     }
