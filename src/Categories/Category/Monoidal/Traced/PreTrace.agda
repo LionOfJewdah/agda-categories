@@ -1,19 +1,18 @@
 {-# OPTIONS --without-K --safe #-}
 
-open import Categories.Category
-open import Categories.Category.Monoidal
+open import Categories.Category.Core using (Category)
+open import Categories.Category.Monoidal.Core using (Monoidal)
 
 module Categories.Category.Monoidal.Traced.PreTrace
   {o ℓ e} {C : Category o ℓ e} (M : Monoidal C) where
 
-open Category C
+open Category C using (Obj; _⇒_; _≈_; id; _∘_)
 
-open import Level
+open import Level using (levelOfTerm)
 
 open import Data.Product using (_,_)
 
-open import Categories.Category.Monoidal.Symmetric M
-open import Categories.Category.Monoidal.Reasoning M
+open import Categories.Category.Monoidal.Symmetric M using (Symmetric)
 open import Categories.Category.Monoidal.Traced M using (Traced)
 
 private
@@ -43,8 +42,8 @@ record PreTrace (S : Symmetric) : Set (levelOfTerm M) where
     tightenₗ : trace (f ⊗₁ id ∘ g) ≈ f ∘ trace g
     tightenᵣ : trace (f ∘ g ⊗₁ id) ≈ trace f ∘ g
 
-    superposing : trace {X = X} (associator.to ∘ id {Y} ⊗₁ f ∘ associator.from)
-                ≈ id {Y} ⊗₁ trace {X = X} f
+    superposing : trace (associator.to ∘ id {Y} ⊗₁ f ∘ associator.from)
+                ≈ id ⊗₁ trace f
     yanking     : trace (braiding.⇒.η (X , X)) ≈ id
 
 -- Every traced category is a pre-trace over its own braiding, forgetting `slide`,

@@ -25,8 +25,7 @@ open import Categories.Category.Monoidal.Properties M using (monoidal-Op)
 open import Categories.Category.Monoidal.Rigid.Properties M using (rigidʳ-Op)
 open import Categories.Category.Monoidal.Symmetric.Properties using (symmetric-Op)
 open import Categories.Category.Monoidal.Traced M using (Traced)
-open import Categories.Category.Monoidal.CompactClosed.Trace.Definition M K
-open import Categories.Category.Monoidal.CompactClosed.Trace.Construction M K
+open import Categories.Category.Monoidal.CompactClosed.Trace M K
 import Categories.Category.Monoidal.CompactClosed monoidal-Op as OpCompactClosed
 
 open CompactClosed K using (symmetric; leftRigid; rightRigid; rigid)
