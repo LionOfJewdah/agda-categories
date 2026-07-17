@@ -4,6 +4,10 @@
 -- Compact closure transfers to the opposite monoidal category, and dualization
 -- gives a strong symmetric monoidal equivalence with the opposite category.
 
+-- Every compact closed category is also traced. The trace of
+-- `f : A ⊗₀ X ⇒ B ⊗₀ X` is obtained by bending `X` through the cup and
+-- cap, as in Joyal, Street & Verity, "Traced monoidal categories" (1996), §5.
+
 open import Categories.Category.Core using (Category)
 open import Categories.Category.Equivalence using (StrongEquivalence)
 open import Categories.Category.Monoidal.Bundle using (SymmetricMonoidalCategory)
@@ -20,6 +24,9 @@ open import Data.Sum using (inj₁)
 open import Categories.Category.Monoidal.Properties M using (monoidal-Op)
 open import Categories.Category.Monoidal.Rigid.Properties M using (rigidʳ-Op)
 open import Categories.Category.Monoidal.Symmetric.Properties using (symmetric-Op)
+open import Categories.Category.Monoidal.Traced M using (Traced)
+open import Categories.Category.Monoidal.CompactClosed.Trace.Definition M K
+open import Categories.Category.Monoidal.CompactClosed.Trace.Construction M K
 import Categories.Category.Monoidal.CompactClosed monoidal-Op as OpCompactClosed
 
 open CompactClosed K using (symmetric; leftRigid; rightRigid; rigid)
@@ -48,3 +55,17 @@ dual-StrongSymmetricMonoidalFunctor :
     (SymmetricMonoidalCategory.op symmetricMonoidalCategory)
 dual-StrongSymmetricMonoidalFunctor =
   RigidFunctor.dual-StrongSymmetricMonoidalFunctor M symmetric rigid
+
+traced : Traced
+traced = record
+  { symmetric    = symmetric
+  ; trace        = trace
+  ; trace-resp-≈ = trace-resp-≈
+  ; slide        = trace-slide
+  ; tightenₗ     = tightenₗ
+  ; tightenᵣ     = tightenᵣ
+  ; vanishing₁   = vanishing₁
+  ; vanishing₂   = vanishing₂
+  ; superposing  = superposing
+  ; yanking      = yanking
+  }
