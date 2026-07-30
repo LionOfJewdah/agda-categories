@@ -21,7 +21,7 @@ open import Categories.Category.Monoidal.Closed using (Closed)
 --
 -- `t-unit` is their "t_I is invertible", already in the normalized form the
 -- construction reduces it to: an arbitrary invertible `t {unit}` is corrected by
--- composing with the scalar `t {unit} ⁻¹ ∘ can`.  Their Remark 2.2 shows the
+-- composing with the scalar `t {unit} ⁻¹ ∘ unit-coeval`.  Their Remark 2.2 shows the
 -- hypothesis cannot be dropped — ωCppo⊥ has an extranatural `t` and is not
 -- compact closed.
 
@@ -63,8 +63,8 @@ infix 30 _*
 _* : Obj → Obj
 X * = [ X , unit ]₀
 
-can : unit ⇒ unit ⊗₀ unit *
-can = (id ⊗₁ ⌜id⌝) ∘ ρ⇐
+unit-coeval : unit ⇒ unit ⊗₀ unit *
+unit-coeval = (id ⊗₁ ⌜id⌝) ∘ ρ⇐
 
 module _ (t : ∀ {X} → unit ⇒ X ⊗₀ X *)
     -- Extranaturality: as maps `[ X , Y ]₀ ⇒ Y ⊗₀ X *`, handing a function its
@@ -73,35 +73,53 @@ module _ (t : ∀ {X} → unit ⇒ X ⊗₀ X *)
     (t-extranatural : ∀ {X Y} →
        (eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t {X}) ∘ ρ⇐
      ≈ (id ⊗₁ internal-∘) ∘ α⇒ ∘ (t {Y} ⊗₁ id) ∘ λ⇐)
-    (t-unit : t {unit} ≈ can)
+    (t-unit : t {unit} ≈ unit-coeval)
     where
+
+  private
+    hexagonˡ : [ X , Y ]₀ ⇒ Y ⊗₀ X *
+    hexagonˡ = (eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t) ∘ ρ⇐
+
+    hexagonʳ : [ X , Y ]₀ ⇒ Y ⊗₀ X *
+    hexagonʳ = (id ⊗₁ internal-∘) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
 
   ------------------------------------------------------------------------
   -- `snake₂` is the hexagon at `Y := unit`.  Its left-hand side *is* the snake's
   -- composite; its right-hand side collapses, because composing with the
   -- internal identity is a unitor.
 
+  private
+    unit-composition : λ⇒ ∘ hexagonʳ {X} {unit} ≈ id {X *}
+    unit-composition = begin
+      λ⇒ ∘ (id ⊗₁ internal-∘) ∘ α⇒ ∘ (t {unit} ⊗₁ id) ∘ λ⇐
+        ≈⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ (t-unit ⟩⊗⟨refl) ⟩∘⟨refl ⟩
+      λ⇒ ∘ (id ⊗₁ internal-∘) ∘ α⇒ ∘
+        (((id ⊗₁ ⌜id⌝) ∘ ρ⇐) ⊗₁ id) ∘ λ⇐
+        ≈⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ pushˡ split₁ˡ ⟩
+      λ⇒ ∘ (id ⊗₁ internal-∘) ∘ α⇒ ∘
+        ((id ⊗₁ ⌜id⌝) ⊗₁ id) ∘ (ρ⇐ ⊗₁ id) ∘ λ⇐
+        ≈⟨ refl⟩∘⟨ refl⟩∘⟨ extendʳ assoc-commute-from ⟩
+      λ⇒ ∘ (id ⊗₁ internal-∘) ∘ (id ⊗₁ (⌜id⌝ ⊗₁ id)) ∘
+        α⇒ ∘ (ρ⇐ ⊗₁ id) ∘ λ⇐
+        ≈⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ pullˡ triangle-inv′ ⟩
+      λ⇒ ∘ (id ⊗₁ internal-∘) ∘ (id ⊗₁ (⌜id⌝ ⊗₁ id)) ∘
+        (id ⊗₁ λ⇐) ∘ λ⇐
+        ≈⟨ refl⟩∘⟨ pullˡ merge₂ˡ ⟩
+      λ⇒ ∘ (id ⊗₁ (internal-∘ ∘ (⌜id⌝ ⊗₁ id))) ∘ (id ⊗₁ λ⇐) ∘ λ⇐
+        ≈⟨ refl⟩∘⟨ (refl⟩⊗⟨ internal-∘-idˡ) ⟩∘⟨refl ⟩
+      λ⇒ ∘ (id ⊗₁ λ⇒) ∘ (id ⊗₁ λ⇐) ∘
+        λ⇐  ≈⟨ refl⟩∘⟨ pullˡ merge₂ˡ ⟩
+      λ⇒ ∘ (id ⊗₁ (λ⇒ ∘ λ⇐)) ∘
+        λ⇐  ≈⟨ refl⟩∘⟨ (refl⟩⊗⟨ unitorˡ.isoʳ) ⟩∘⟨refl ⟩
+      λ⇒ ∘ (id ⊗₁ id) ∘ λ⇐               ≈⟨ refl⟩∘⟨ elimˡ ⊗.identity ⟩
+      λ⇒ ∘ λ⇐                            ≈⟨ unitorˡ.isoʳ ⟩
+      id                                 ∎
+
   snake₂ : λ⇒ ∘ (eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t {X}) ∘ ρ⇐ ≈ id {X *}
   snake₂ = begin
-    λ⇒ ∘ (eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t) ∘ ρ⇐
-      ≈⟨ refl⟩∘⟨ t-extranatural ⟩
-    λ⇒ ∘ (id ⊗₁ internal-∘) ∘ α⇒ ∘ (t {unit} ⊗₁ id) ∘ λ⇐
-      ≈⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ (t-unit ⟩⊗⟨refl) ⟩∘⟨refl ⟩
-    λ⇒ ∘ (id ⊗₁ internal-∘) ∘ α⇒ ∘ (((id ⊗₁ ⌜id⌝) ∘ ρ⇐) ⊗₁ id) ∘ λ⇐
-      ≈⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ pushˡ split₁ˡ ⟩
-    λ⇒ ∘ (id ⊗₁ internal-∘) ∘ α⇒ ∘ ((id ⊗₁ ⌜id⌝) ⊗₁ id) ∘ (ρ⇐ ⊗₁ id) ∘ λ⇐
-      ≈⟨ refl⟩∘⟨ refl⟩∘⟨ extendʳ assoc-commute-from ⟩
-    λ⇒ ∘ (id ⊗₁ internal-∘) ∘ (id ⊗₁ (⌜id⌝ ⊗₁ id)) ∘ α⇒ ∘ (ρ⇐ ⊗₁ id) ∘ λ⇐
-      ≈⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ pullˡ triangle-inv′ ⟩
-    λ⇒ ∘ (id ⊗₁ internal-∘) ∘ (id ⊗₁ (⌜id⌝ ⊗₁ id)) ∘ (id ⊗₁ λ⇐) ∘ λ⇐
-      ≈⟨ refl⟩∘⟨ pullˡ merge₂ˡ ⟩
-    λ⇒ ∘ (id ⊗₁ (internal-∘ ∘ (⌜id⌝ ⊗₁ id))) ∘ (id ⊗₁ λ⇐) ∘ λ⇐
-      ≈⟨ refl⟩∘⟨ (refl⟩⊗⟨ internal-∘-idˡ) ⟩∘⟨refl ⟩
-    λ⇒ ∘ (id ⊗₁ λ⇒) ∘ (id ⊗₁ λ⇐) ∘ λ⇐              ≈⟨ refl⟩∘⟨ pullˡ merge₂ˡ ⟩
-    λ⇒ ∘ (id ⊗₁ (λ⇒ ∘ λ⇐)) ∘ λ⇐                    ≈⟨ refl⟩∘⟨ (refl⟩⊗⟨ unitorˡ.isoʳ) ⟩∘⟨refl ⟩
-    λ⇒ ∘ (id ⊗₁ id) ∘ λ⇐                           ≈⟨ refl⟩∘⟨ elimˡ ⊗.identity ⟩
-    λ⇒ ∘ λ⇐                                        ≈⟨ unitorˡ.isoʳ ⟩
-    id                                             ∎
+    λ⇒ ∘ hexagonˡ  ≈⟨ refl⟩∘⟨ t-extranatural ⟩
+    λ⇒ ∘ hexagonʳ  ≈⟨ unit-composition ⟩
+    id            ∎
 
   ------------------------------------------------------------------------
   -- `snake₁` is the hexagon at `X := unit`, conjugated by `i : X ≅ [ unit , X ]₀`
@@ -117,53 +135,74 @@ module _ (t : ∀ {X} → unit ⇒ X ⊗₀ X *)
 
     -- The hexagon's right-hand side: `i⇒` slides through to meet `comp`, and
     -- `comp-i` turns the two of them back into `ev`.
-    conj-right : conj ((id ⊗₁ internal-∘) ∘ α⇒ ∘ (t {X} ⊗₁ id) ∘ λ⇐)
-               ≈ ρ⇒ ∘ (id ⊗₁ eval) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
+    conj-right : conj (hexagonʳ {unit} {X})
+      ≈ ρ⇒ ∘ (id ⊗₁ eval) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
     conj-right = begin
-      ρ⇒ ∘ (id ⊗₁ unit-hom⇐) ∘ ((id ⊗₁ internal-∘) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐) ∘ unit-hom⇒
-        ≈⟨ refl⟩∘⟨ refl⟩∘⟨ name-slide ⟩
-      ρ⇒ ∘ (id ⊗₁ unit-hom⇐) ∘ (id ⊗₁ (internal-∘ ∘ (id ⊗₁ unit-hom⇒))) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
+      conj hexagonʳ  ≈⟨ refl⟩∘⟨ refl⟩∘⟨ name-slide ⟩
+      ρ⇒ ∘ (id ⊗₁ unit-hom⇐) ∘
+        (id ⊗₁ (internal-∘ ∘ (id ⊗₁ unit-hom⇒))) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
         ≈⟨ refl⟩∘⟨ pullˡ merge₂ˡ ⟩
-      ρ⇒ ∘ (id ⊗₁ (unit-hom⇐ ∘ internal-∘ ∘ (id ⊗₁ unit-hom⇒))) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
+      ρ⇒ ∘ (id ⊗₁ (unit-hom⇐ ∘ internal-∘ ∘ (id ⊗₁ unit-hom⇒))) ∘
+        α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
         ≈⟨ refl⟩∘⟨ (refl⟩⊗⟨ internal-∘-unit-hom) ⟩∘⟨refl ⟩
-      ρ⇒ ∘ (id ⊗₁ eval) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐        ∎
+      ρ⇒ ∘ (id ⊗₁ eval) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐  ∎
       where
         -- The named argument travels from the far right of the composite to the
         -- inside of `comp`, past `t` and the associator.
-        name-slide : ((id ⊗₁ internal-∘) ∘ α⇒ ∘ (t {X} ⊗₁ id) ∘ λ⇐) ∘ unit-hom⇒
-                   ≈ (id ⊗₁ (internal-∘ ∘ (id ⊗₁ unit-hom⇒))) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
+        name-slide : ((id ⊗₁ internal-∘) ∘ α⇒ ∘ (t {X} ⊗₁ id) ∘ λ⇐) ∘
+                       unit-hom⇒
+                       ≈ (id ⊗₁ (internal-∘ ∘ (id ⊗₁ unit-hom⇒))) ∘
+                         α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
         name-slide = begin
-          ((id ⊗₁ internal-∘) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐) ∘ unit-hom⇒       ≈⟨ ⟺ reassoc-tail₅ ⟩
+          ((id ⊗₁ internal-∘) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐) ∘
+            unit-hom⇒  ≈⟨ ⟺ reassoc-tail₅ ⟩
           (id ⊗₁ internal-∘) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐ ∘ unit-hom⇒
             ≈⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ unitorˡ-commute-to ⟩
           (id ⊗₁ internal-∘) ∘ α⇒ ∘ (t ⊗₁ id) ∘ (id ⊗₁ unit-hom⇒) ∘ λ⇐
             ≈⟨ refl⟩∘⟨ refl⟩∘⟨ pullˡ whisker-comm ⟩
-          (id ⊗₁ internal-∘) ∘ α⇒ ∘ ((id ⊗₁ unit-hom⇒) ∘ (t ⊗₁ id)) ∘ λ⇐  ≈⟨ refl⟩∘⟨ refl⟩∘⟨ assoc ⟩
+          (id ⊗₁ internal-∘) ∘ α⇒ ∘
+            ((id ⊗₁ unit-hom⇒) ∘ (t ⊗₁ id)) ∘
+            λ⇐  ≈⟨ refl⟩∘⟨ refl⟩∘⟨ assoc ⟩
           (id ⊗₁ internal-∘) ∘ α⇒ ∘ (id ⊗₁ unit-hom⇒) ∘ (t ⊗₁ id) ∘ λ⇐
             ≈⟨ refl⟩∘⟨ pullˡ α⇒-id⊗-commute ⟩
-          (id ⊗₁ internal-∘) ∘ ((id ⊗₁ (id ⊗₁ unit-hom⇒)) ∘ α⇒) ∘ (t ⊗₁ id) ∘ λ⇐
+          (id ⊗₁ internal-∘) ∘ ((id ⊗₁ (id ⊗₁ unit-hom⇒)) ∘ α⇒) ∘
+            (t ⊗₁ id) ∘ λ⇐
             ≈⟨ refl⟩∘⟨ assoc ⟩
-          (id ⊗₁ internal-∘) ∘ (id ⊗₁ (id ⊗₁ unit-hom⇒)) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐  ≈⟨ pullˡ merge₂ˡ ⟩
-          (id ⊗₁ (internal-∘ ∘ (id ⊗₁ unit-hom⇒))) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐        ∎
+          (id ⊗₁ internal-∘) ∘ (id ⊗₁ (id ⊗₁ unit-hom⇒)) ∘
+            α⇒ ∘ (t ⊗₁ id) ∘ λ⇐  ≈⟨ pullˡ merge₂ˡ ⟩
+          (id ⊗₁ (internal-∘ ∘ (id ⊗₁ unit-hom⇒))) ∘
+            α⇒ ∘ (t ⊗₁ id) ∘ λ⇐  ∎
 
     -- The hexagon's left-hand side: with `t {unit}` canonical, everything cancels
     -- and only `i` against its own inverse is left.
-    conj-left : conj ((eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t {unit}) ∘ ρ⇐) ≈ id {X}
+    conj-left : conj (hexagonˡ {unit} {X}) ≈ id {X}
     conj-left = begin
-      ρ⇒ ∘ (id ⊗₁ unit-hom⇐) ∘ ((eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t) ∘ ρ⇐) ∘ unit-hom⇒
-        ≈⟨ refl⟩∘⟨ refl⟩∘⟨ unit-fold ⟩∘⟨refl ⟩
-      ρ⇒ ∘ (id ⊗₁ unit-hom⇐) ∘ ((eval ⊗₁ id) ∘ (id ⊗₁ ⌜id⌝) ∘ ρ⇐ ∘ ρ⇐) ∘ unit-hom⇒
-        ≈⟨ refl⟩∘⟨ refl⟩∘⟨ pullˡ (merge₂ʳ ○ (refl⟩⊗⟨ identityˡ)) ⟩∘⟨refl ⟩
-      ρ⇒ ∘ (id ⊗₁ unit-hom⇐) ∘ ((eval ⊗₁ ⌜id⌝) ∘ ρ⇐ ∘ ρ⇐) ∘ unit-hom⇒
-        ≈⟨ refl⟩∘⟨ pullˡ (pullˡ (merge₂ˡ ○ (refl⟩⊗⟨ unit-hom⇐-⌜id⌝))) ⟩
-      ρ⇒ ∘ ((eval ⊗₁ id) ∘ ρ⇐ ∘ ρ⇐) ∘ unit-hom⇒               ≈⟨ refl⟩∘⟨ assoc²βε ⟩
-      ρ⇒ ∘ (eval ⊗₁ id) ∘ ρ⇐ ∘ ρ⇐ ∘ unit-hom⇒                 ≈⟨ pullˡ unitorʳ-commute-from ⟩
-      (eval ∘ ρ⇒) ∘ ρ⇐ ∘ ρ⇐ ∘ unit-hom⇒                       ≈⟨ assoc ⟩
-      eval ∘ ρ⇒ ∘ ρ⇐ ∘ ρ⇐ ∘ unit-hom⇒                         ≈⟨ refl⟩∘⟨ cancelˡ unitorʳ.isoʳ ⟩
-      eval ∘ ρ⇐ ∘ unit-hom⇒                                   ≈⟨ sym-assoc ⟩
-      (eval ∘ ρ⇐) ∘ unit-hom⇒                                 ≈⟨ unit-hom-isoˡ ⟩
-      id                                             ∎
+      conj hexagonˡ  ≈⟨ refl⟩∘⟨ refl⟩∘⟨ unit-fold ⟩∘⟨refl ⟩
+      ρ⇒ ∘ (id ⊗₁ unit-hom⇐) ∘
+        ((eval ⊗₁ id) ∘ (id ⊗₁ ⌜id⌝) ∘ ρ⇐ ∘ ρ⇐) ∘ unit-hom⇒
+        ≈⟨ refl⟩∘⟨ refl⟩∘⟨ pullˡ merge-eval-name ⟩∘⟨refl ⟩
+      ρ⇒ ∘ (id ⊗₁ unit-hom⇐) ∘
+        ((eval ⊗₁ ⌜id⌝) ∘ ρ⇐ ∘ ρ⇐) ∘ unit-hom⇒
+        ≈⟨ refl⟩∘⟨ pullˡ (pullˡ merge-unit-name) ⟩
+      ρ⇒ ∘ ((eval ⊗₁ id) ∘ ρ⇐ ∘ ρ⇐) ∘
+        unit-hom⇒  ≈⟨ refl⟩∘⟨ assoc²βε ⟩
+      ρ⇒ ∘ (eval ⊗₁ id) ∘ ρ⇐ ∘ ρ⇐ ∘
+        unit-hom⇒  ≈⟨ pullˡ unitorʳ-commute-from ⟩
+      (eval ∘ ρ⇒) ∘ ρ⇐ ∘ ρ⇐ ∘ unit-hom⇒          ≈⟨ assoc ⟩
+      eval ∘ ρ⇒ ∘ ρ⇐ ∘ ρ⇐ ∘
+        unit-hom⇒  ≈⟨ refl⟩∘⟨ cancelˡ unitorʳ.isoʳ ⟩
+      eval ∘ ρ⇐ ∘ unit-hom⇒                      ≈⟨ sym-assoc ⟩
+      (eval ∘ ρ⇐) ∘ unit-hom⇒                    ≈⟨ unit-hom-isoˡ ⟩
+      id                                         ∎
       where
+        merge-eval-name : (eval {unit} {X} ⊗₁ id) ∘ (id ⊗₁ ⌜id⌝)
+                            ≈ eval ⊗₁ ⌜id⌝
+        merge-eval-name = merge₂ʳ ○ (refl⟩⊗⟨ identityˡ)
+
+        merge-unit-name : (id ⊗₁ unit-hom⇐) ∘ (eval {unit} {X} ⊗₁ ⌜id⌝)
+                            ≈ eval ⊗₁ id
+        merge-unit-name = merge₂ˡ ○ (refl⟩⊗⟨ unit-hom⇐-⌜id⌝)
+
         -- The canonical `t {unit}`, unwound: its `j` floats out to the left and
         -- its unitor merges with the associator.
         unit-fold : (eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t {unit}) ∘ ρ⇐
@@ -173,9 +212,11 @@ module _ (t : ∀ {X} → unit ⇒ X ⊗₀ X *)
             ≈⟨ refl⟩∘⟨ refl⟩∘⟨ (refl⟩⊗⟨ t-unit) ⟩∘⟨refl ⟩
           (eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ ((id ⊗₁ ⌜id⌝) ∘ ρ⇐)) ∘ ρ⇐
             ≈⟨ refl⟩∘⟨ refl⟩∘⟨ split₂ˡ ⟩∘⟨refl ⟩
-          (eval ⊗₁ id) ∘ α⇐ ∘ ((id ⊗₁ (id ⊗₁ ⌜id⌝)) ∘ (id ⊗₁ ρ⇐)) ∘ ρ⇐
+          (eval ⊗₁ id) ∘ α⇐ ∘
+            ((id ⊗₁ (id ⊗₁ ⌜id⌝)) ∘ (id ⊗₁ ρ⇐)) ∘ ρ⇐
             ≈⟨ refl⟩∘⟨ refl⟩∘⟨ assoc ⟩
-          (eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ (id ⊗₁ ⌜id⌝)) ∘ (id ⊗₁ ρ⇐) ∘ ρ⇐
+          (eval ⊗₁ id) ∘ α⇐ ∘
+            (id ⊗₁ (id ⊗₁ ⌜id⌝)) ∘ (id ⊗₁ ρ⇐) ∘ ρ⇐
             ≈⟨ refl⟩∘⟨ pullˡ (⟺ α⇐-id⊗-commute) ⟩
           (eval ⊗₁ id) ∘ ((id ⊗₁ ⌜id⌝) ∘ α⇐) ∘ (id ⊗₁ ρ⇐) ∘ ρ⇐
             ≈⟨ refl⟩∘⟨ assoc ⟩
@@ -187,9 +228,9 @@ module _ (t : ∀ {X} → unit ⇒ X ⊗₀ X *)
   snake₁ = begin
     ρ⇒ ∘ (id ⊗₁ eval) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐
       ≈˘⟨ conj-right ⟩
-    conj ((id ⊗₁ internal-∘) ∘ α⇒ ∘ (t ⊗₁ id) ∘ λ⇐)
+    conj hexagonʳ
       ≈˘⟨ refl⟩∘⟨ refl⟩∘⟨ t-extranatural ⟩∘⟨refl ⟩
-    conj ((eval ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ t {unit}) ∘ ρ⇐)
+    conj hexagonˡ
       ≈⟨ conj-left ⟩
     id                                     ∎
 

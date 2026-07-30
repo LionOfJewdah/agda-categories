@@ -17,6 +17,8 @@ module Categories.Category.Monoidal.Closed.Properties
 
 open import Data.Product using (_,_)
 
+import Categories.Enriched.Category as Enriched
+
 open Closed Cl using ([-,-]; [_,_]₀; [_,_]₁; [_,-]; module adjoint; module mate)
 
 open Category 𝒞
@@ -28,12 +30,8 @@ open import Categories.Category.Monoidal.Reassociation M
 open import Categories.Morphism.Reasoning 𝒞
 open import Categories.Morphism 𝒞 using (_≅_)
 open import Categories.Functor.Bifunctor.Properties using ([_]-decompose₂)
+open import Categories.Enriched.Category M using (_[_,_])
 open Shorthands
-
-open import Categories.Category.Product using (Product; _※_; _⁂_; πˡ; πʳ)
-open import Categories.Functor using (Functor; _∘F_) renaming (id to idF)
-open import Categories.NaturalTransformation using (ntHelper)
-open import Categories.NaturalTransformation.NaturalIsomorphism using (NaturalIsomorphism)
 
 open adjoint using (counit)
 open adjoint public using ()
@@ -59,6 +57,14 @@ eval {X} {Y} = counit.η {X} Y
 -- two triangle laws are exactly β and η for currying.
 uncurry : A ⇒ [ X , B ]₀ → A ⊗₀ X ⇒ B
 uncurry g = eval ∘ (g ⊗₁ id)
+
+-- Uncurrying distributes over precomposition and respects equality.
+uncurry-∘ : {g : B ⇒ [ X , Y ]₀} {h : A ⇒ B} →
+  uncurry (g ∘ h) ≈ uncurry g ∘ (h ⊗₁ id)
+uncurry-∘ = (refl⟩∘⟨ split₁ˡ) ○ sym-assoc
+
+uncurry-resp-≈ : {g h : A ⇒ [ X , Y ]₀} → g ≈ h → uncurry g ≈ uncurry h
+uncurry-resp-≈ p = refl⟩∘⟨ (p ⟩⊗⟨refl)
 
 -- Currying is *uniquely* determined by β: nothing else evaluates to `f`.
 curry-unique : {f : A ⊗₀ X ⇒ B} {g : A ⇒ [ X , B ]₀} → uncurry g ≈ f → g ≈ curry f
@@ -88,14 +94,44 @@ eval-comm-dom {f = f} = mate.commute₂ f
 
 -- The full naturality of evaluation, combining both slots: `[ p , q ]₁` reindexes the
 -- argument by `p` and post-composes `q`.
-eval-comm : {p : A ⇒ B} {q : X ⇒ Y} → eval {A} {Y} ∘ ([ p , q ]₁ ⊗₁ id) ≈ q ∘ eval ∘ (id ⊗₁ p)
-eval-comm {p = p} {q = q} = begin
-  eval ∘ ([ p , q ]₁ ⊗₁ id)                          ≈⟨ refl⟩∘⟨ ([ [-,-] ]-decompose₂ ⟩⊗⟨refl) ⟩
-  eval ∘ (([ id , q ]₁ ∘ [ p , id ]₁) ⊗₁ id)         ≈⟨ refl⟩∘⟨ split₁ˡ ⟩
-  eval ∘ ([ id , q ]₁ ⊗₁ id) ∘ ([ p , id ]₁ ⊗₁ id)   ≈⟨ pullˡ eval-comm-cod ⟩
-  (q ∘ eval) ∘ ([ p , id ]₁ ⊗₁ id)                   ≈⟨ assoc ⟩
-  q ∘ eval ∘ ([ p , id ]₁ ⊗₁ id)                     ≈⟨ refl⟩∘⟨ eval-comm-dom ⟩
-  q ∘ eval ∘ (id ⊗₁ p)                               ∎
+abstract
+  eval-comm : {p : A ⇒ B} {q : X ⇒ Y} →
+    eval {A} {Y} ∘ ([ p , q ]₁ ⊗₁ id) ≈ q ∘ eval ∘ (id ⊗₁ p)
+  eval-comm {p = p} {q = q} = begin
+    eval ∘ ([ p , q ]₁ ⊗₁ id)                          ≈⟨ refl⟩∘⟨ ([ [-,-] ]-decompose₂ ⟩⊗⟨refl) ⟩
+    eval ∘ (([ id , q ]₁ ∘ [ p , id ]₁) ⊗₁ id)         ≈⟨ refl⟩∘⟨ split₁ˡ ⟩
+    eval ∘ ([ id , q ]₁ ⊗₁ id) ∘ ([ p , id ]₁ ⊗₁ id)   ≈⟨ pullˡ eval-comm-cod ⟩
+    (q ∘ eval) ∘ ([ p , id ]₁ ⊗₁ id)                   ≈⟨ pullʳ eval-comm-dom ⟩
+    q ∘ eval ∘ (id ⊗₁ p)                               ∎
+
+-- Evaluating a curried map after reindexing its argument.
+eval-curry-reindex : {p : A ⇒ B} {g : C ⊗₀ B ⇒ X} →
+  (eval ∘ (id ⊗₁ p)) ∘ (curry g ⊗₁ id) ≈ g ∘ (id ⊗₁ p)
+eval-curry-reindex = pullʳ (⟺ whisker-comm) ○ pullˡ eval-curry
+
+-- Hom action on a curried map is precomposition in the argument and
+-- postcomposition in the result.
+abstract
+  hom-curry : {p : A ⇒ B} {q : X ⇒ Y} {g : C ⊗₀ B ⇒ X} →
+    [ p , q ]₁ ∘ curry g ≈ curry (q ∘ g ∘ (id ⊗₁ p))
+  hom-curry {p = p} {q = q} {g = g} = uncurry-injective (begin
+    uncurry ([ p , q ]₁ ∘ curry g)                  ≈⟨ uncurry-∘ ⟩
+    (eval ∘ ([ p , q ]₁ ⊗₁ id)) ∘ (curry g ⊗₁ id)  ≈⟨ eval-comm ⟩∘⟨refl ⟩
+    (q ∘ eval ∘ (id ⊗₁ p)) ∘ (curry g ⊗₁ id)       ≈⟨ pullʳ eval-curry-reindex ⟩
+    q ∘ g ∘ (id ⊗₁ p)                               ≈˘⟨ eval-curry ⟩
+    uncurry (curry (q ∘ g ∘ (id ⊗₁ p)))            ∎)
+
+hom-curryᵣ : {p : A ⇒ B} {g : C ⊗₀ B ⇒ X} →
+  [ p , id ]₁ ∘ curry g ≈ curry (g ∘ (id ⊗₁ p))
+hom-curryᵣ = hom-curry ○ curry-resp-≈ identityˡ
+
+-- Composition of internal-hom actions.
+hom-∘ : {a : C ⇒ B} {c : B ⇒ A} {b : Y ⇒ Z} {d : X ⇒ Y} →
+  [ a , b ]₁ ∘ [ c , d ]₁ ≈ [ c ∘ a , b ∘ d ]₁
+hom-∘ = ⟺ [-,-].homomorphism
+
+hom-∘ᵣ : {a : C ⇒ B} {c : B ⇒ A} → [ a , id {X} ]₁ ∘ [ c , id ]₁ ≈ [ c ∘ a , id ]₁
+hom-∘ᵣ = hom-∘ ○ [-,-].F-resp-≈ (Equiv.refl , identity²)
 
 ------------------------------------------------------------------------
 -- Names.  A map `X ⇒ Y` is an element `unit ⇒ [ X , Y ]₀` of the hom object,
@@ -110,6 +146,43 @@ eval-⌜⌝ = eval-curry
 -- The internal identity.
 ⌜id⌝ : unit ⇒ [ X , X ]₀
 ⌜id⌝ = ⌜ id ⌝
+
+⌜⌝-resp-≈ : {f g : X ⇒ Y} → f ≈ g → ⌜ f ⌝ ≈ ⌜ g ⌝
+⌜⌝-resp-≈ f≈g = curry-resp-≈ (f≈g ⟩∘⟨refl)
+
+-- Reindexing the domain of a named map is precomposition.
+⌜hom⌝ʳ : {f : A ⇒ B} {g : B ⇒ C} → [ f , id ]₁ ∘ ⌜ g ⌝ ≈ ⌜ g ∘ f ⌝
+⌜hom⌝ʳ {f = f} {g} = begin
+  [ f , id ]₁ ∘ ⌜ g ⌝                    ≈⟨ hom-curryᵣ ⟩
+  curry ((g ∘ λ⇒) ∘ (id ⊗₁ f))          ≈⟨ curry-resp-≈ assoc ⟩
+  curry (g ∘ λ⇒ ∘ (id ⊗₁ f))            ≈⟨ curry-resp-≈ (refl⟩∘⟨ unitorˡ-commute-from) ⟩
+  curry (g ∘ f ∘ λ⇒)                    ≈⟨ curry-resp-≈ sym-assoc ⟩
+  ⌜ g ∘ f ⌝                             ∎
+
+-- Reindexing the codomain of a named map is postcomposition.
+⌜hom⌝ˡ : {f : A ⇒ B} {g : B ⇒ C} → [ id , g ]₁ ∘ ⌜ f ⌝ ≈ ⌜ g ∘ f ⌝
+⌜hom⌝ˡ {f = f} {g} = begin
+  [ id , g ]₁ ∘ ⌜ f ⌝                          ≈⟨ hom-curry ⟩
+  curry (g ∘ (f ∘ λ⇒) ∘ (id ⊗₁ id))           ≈⟨ curry-resp-≈ (refl⟩∘⟨ refl⟩∘⟨ ⊗.identity) ⟩
+  curry (g ∘ (f ∘ λ⇒) ∘ id)                   ≈⟨ curry-resp-≈ (refl⟩∘⟨ identityʳ) ⟩
+  curry (g ∘ f ∘ λ⇒)                          ≈⟨ curry-resp-≈ sym-assoc ⟩
+  ⌜ g ∘ f ⌝                                   ∎
+
+-- Evaluating a named map after reindexing its argument is ordinary composition.
+eval-⌜⌝-at : {f : B ⇒ C} {g : A ⇒ B} →
+  eval ∘ (⌜ f ⌝ ⊗₁ g) ≈ (f ∘ λ⇒) ∘ (id ⊗₁ g)
+eval-⌜⌝-at {f = f} {g} = begin
+  eval ∘ (⌜ f ⌝ ⊗₁ g)                ≈⟨ refl⟩∘⟨ serialize₁₂ ⟩
+  eval ∘ (⌜ f ⌝ ⊗₁ id) ∘ (id ⊗₁ g)  ≈⟨ pullˡ eval-⌜⌝ ⟩
+  (f ∘ λ⇒) ∘ (id ⊗₁ g)              ∎
+
+eval-⌜⌝-unit : {f : B ⇒ C} {g : A ⇒ B} →
+  (eval ∘ (⌜ f ⌝ ⊗₁ g)) ∘ λ⇐ ≈ f ∘ g
+eval-⌜⌝-unit = begin
+  (eval ∘ (⌜ _ ⌝ ⊗₁ _)) ∘ λ⇐          ≈⟨ eval-⌜⌝-at ⟩∘⟨refl ⟩
+  (( _ ∘ λ⇒) ∘ (id ⊗₁ _)) ∘ λ⇐        ≈⟨ pullʳ (⟺ unitorˡ-commute-to) ⟩
+  (_ ∘ λ⇒) ∘ λ⇐ ∘ _                   ≈⟨ cancelInner unitorˡ.isoʳ ⟩
+  _ ∘ _                               ∎
 
 eval-⌜id⌝ : uncurry (⌜id⌝ {X}) ≈ λ⇒
 eval-⌜id⌝ = begin
@@ -127,33 +200,220 @@ internal-∘ = curry (eval ∘ (id ⊗₁ eval) ∘ α⇒)
 eval-internal-∘ : uncurry (internal-∘ {Y} {Z} {X}) ≈ eval ∘ (id ⊗₁ eval) ∘ α⇒
 eval-internal-∘ = eval-curry
 
+abstract
+  internal-∘-curry : {f : A ⊗₀ Y ⇒ Z} {g : B ⊗₀ X ⇒ Y} →
+    internal-∘ ∘ (curry f ⊗₁ curry g) ≈ curry (f ∘ (id ⊗₁ g) ∘ α⇒)
+  internal-∘-curry {f = f} {g = g} = uncurry-injective (begin
+    uncurry (internal-∘ ∘ (curry f ⊗₁ curry g))               ≈⟨ uncurry-∘ ⟩
+    uncurry internal-∘ ∘ ((curry f ⊗₁ curry g) ⊗₁ id)         ≈⟨ eval-internal-∘ ⟩∘⟨refl ⟩
+    (eval ∘ (id ⊗₁ eval) ∘ α⇒) ∘ ((curry f ⊗₁ curry g) ⊗₁ id)
+      ≈⟨ pull-last assoc-commute-from ⟩
+    eval ∘ (id ⊗₁ eval) ∘ (curry f ⊗₁ (curry g ⊗₁ id)) ∘ α⇒   ≈⟨ refl⟩∘⟨ pullˡ merge₂ˡ ⟩
+    eval ∘ (curry f ⊗₁ (eval ∘ (curry g ⊗₁ id))) ∘ α⇒         ≈⟨ refl⟩∘⟨ (refl⟩⊗⟨ eval-curry) ⟩∘⟨refl ⟩
+    eval ∘ (curry f ⊗₁ g) ∘ α⇒                                ≈⟨ refl⟩∘⟨ pushˡ serialize₁₂ ⟩
+    eval ∘ (curry f ⊗₁ id) ∘ (id ⊗₁ g) ∘ α⇒                   ≈⟨ pullˡ eval-curry ⟩
+    f ∘ (id ⊗₁ g) ∘ α⇒                                        ≈˘⟨ eval-curry ⟩
+    uncurry (curry (f ∘ (id ⊗₁ g) ∘ α⇒))                      ∎)
+
+  internal-∘-curry′ : (f : A ⇒ [ Y , Z ]₀) (g : B ⇒ [ X , Y ]₀) →
+    internal-∘ {Y = Y} ∘ (f ⊗₁ g) ≈ curry (uncurry f ∘ (id ⊗₁ uncurry g) ∘ α⇒)
+  internal-∘-curry′ f g = begin
+    internal-∘ ∘ (f ⊗₁ g)                                  ≈˘⟨ refl⟩∘⟨ curry-eval ⟩⊗⟨ curry-eval ⟩
+    internal-∘ ∘ (curry (uncurry f) ⊗₁ curry (uncurry g))  ≈⟨ internal-∘-curry ⟩
+    curry (uncurry f ∘ (id ⊗₁ uncurry g) ∘ α⇒)             ∎
+
 -- Composing with an internal identity does nothing.  Both unit laws are proved by
 -- uncurrying: the whiskered `j` meets `ev` and unfolds to a unitor.
 
-internal-∘-idˡ : internal-∘ {X = X} ∘ (⌜id⌝ {Y} ⊗₁ id) ≈ λ⇒
-internal-∘-idˡ {X = X} {Y = Y} = uncurry-injective (begin
-  eval ∘ ((internal-∘ ∘ (⌜id⌝ ⊗₁ id)) ⊗₁ id)          ≈⟨ refl⟩∘⟨ split₁ˡ ⟩
-  eval ∘ (internal-∘ ⊗₁ id) ∘ ((⌜id⌝ ⊗₁ id) ⊗₁ id)    ≈⟨ pullˡ eval-internal-∘ ⟩
-  (eval ∘ (id ⊗₁ eval) ∘ α⇒) ∘ ((⌜id⌝ ⊗₁ id) ⊗₁ id)
-    ≈⟨ assoc²βε ⟩
-  eval ∘ (id ⊗₁ eval) ∘ α⇒ ∘ ((⌜id⌝ ⊗₁ id) ⊗₁ id)  ≈⟨ refl⟩∘⟨ refl⟩∘⟨ α⇒-⊗id-commute ⟩
-  eval ∘ (id ⊗₁ eval) ∘ (⌜id⌝ ⊗₁ id) ∘ α⇒          ≈⟨ refl⟩∘⟨ extendʳ (⟺ whisker-comm) ⟩
-  eval ∘ (⌜id⌝ ⊗₁ id) ∘ (id ⊗₁ eval) ∘ α⇒          ≈⟨ pullˡ eval-⌜id⌝ ⟩
-  λ⇒ ∘ (id ⊗₁ eval) ∘ α⇒                      ≈⟨ pullˡ unitorˡ-commute-from ⟩
-  (eval ∘ λ⇒) ∘ α⇒                            ≈⟨ pullʳ coherence₁ ⟩
-  eval ∘ (λ⇒ ⊗₁ id)                           ∎)
+abstract
+  internal-∘-idˡ : internal-∘ {X = X} ∘ (⌜id⌝ {Y} ⊗₁ id) ≈ λ⇒
+  internal-∘-idˡ = uncurry-injective (begin
+    eval ∘ ((internal-∘ ∘ (⌜id⌝ ⊗₁ id)) ⊗₁ id)          ≈⟨ refl⟩∘⟨ split₁ˡ ⟩
+    eval ∘ (internal-∘ ⊗₁ id) ∘ ((⌜id⌝ ⊗₁ id) ⊗₁ id)    ≈⟨ pullˡ eval-internal-∘ ⟩
+    (eval ∘ (id ⊗₁ eval) ∘ α⇒) ∘ ((⌜id⌝ ⊗₁ id) ⊗₁ id)   ≈⟨ pull-last α⇒-⊗id-commute ⟩
+    eval ∘ (id ⊗₁ eval) ∘ (⌜id⌝ ⊗₁ id) ∘ α⇒             ≈⟨ refl⟩∘⟨ extendʳ (⟺ whisker-comm) ⟩
+    eval ∘ (⌜id⌝ ⊗₁ id) ∘ (id ⊗₁ eval) ∘ α⇒             ≈⟨ pullˡ eval-⌜id⌝ ⟩
+    λ⇒ ∘ (id ⊗₁ eval) ∘ α⇒                              ≈⟨ pullˡ unitorˡ-commute-from ⟩
+    (eval ∘ λ⇒) ∘ α⇒                                    ≈⟨ pullʳ coherence₁ ⟩
+    eval ∘ (λ⇒ ⊗₁ id)                                   ∎)
 
-internal-∘-idʳ : internal-∘ {Y = X} {Z = Z} ∘ (id ⊗₁ ⌜id⌝ {X}) ≈ ρ⇒
-internal-∘-idʳ {X = X} {Z = Z} = uncurry-injective (begin
-  eval ∘ ((internal-∘ ∘ (id ⊗₁ ⌜id⌝)) ⊗₁ id)          ≈⟨ refl⟩∘⟨ split₁ˡ ⟩
-  eval ∘ (internal-∘ ⊗₁ id) ∘ ((id ⊗₁ ⌜id⌝) ⊗₁ id)    ≈⟨ pullˡ eval-internal-∘ ⟩
-  (eval ∘ (id ⊗₁ eval) ∘ α⇒) ∘ ((id ⊗₁ ⌜id⌝) ⊗₁ id)
+  internal-∘-idʳ : internal-∘ {Y = X} {Z = Z} ∘ (id ⊗₁ ⌜id⌝ {X}) ≈ ρ⇒
+  internal-∘-idʳ = uncurry-injective (begin
+    eval ∘ ((internal-∘ ∘ (id ⊗₁ ⌜id⌝)) ⊗₁ id)          ≈⟨ refl⟩∘⟨ split₁ˡ ⟩
+    eval ∘ (internal-∘ ⊗₁ id) ∘ ((id ⊗₁ ⌜id⌝) ⊗₁ id)    ≈⟨ pullˡ eval-internal-∘ ⟩
+    (eval ∘ (id ⊗₁ eval) ∘ α⇒) ∘ ((id ⊗₁ ⌜id⌝) ⊗₁ id)   ≈⟨ pull-last assoc-commute-from ⟩
+    eval ∘ (id ⊗₁ eval) ∘ (id ⊗₁ (⌜id⌝ ⊗₁ id)) ∘ α⇒     ≈⟨ refl⟩∘⟨ pullˡ merge₂ˡ ⟩
+    eval ∘ (id ⊗₁ (eval ∘ (⌜id⌝ ⊗₁ id))) ∘ α⇒           ≈⟨ refl⟩∘⟨ (refl⟩⊗⟨ eval-⌜id⌝) ⟩∘⟨refl ⟩
+    eval ∘ (id ⊗₁ λ⇒) ∘ α⇒                              ≈⟨ refl⟩∘⟨ triangle ⟩
+    eval ∘ (ρ⇒ ⊗₁ id)                                   ∎)
+
+-- Associativity of internal composition.
+internal-∘-assoc :
+    internal-∘ {B} {Z} {A} ∘ (internal-∘ {C} {Z} {B} ⊗₁ id)
+  ≈ internal-∘ {C} {Z} {A} ∘ (id ⊗₁ internal-∘ {B} {C} {A}) ∘ α⇒
+internal-∘-assoc = uncurry-injective (begin
+    uncurry (internal-∘ ∘ (internal-∘ ⊗₁ id))  ≈⟨ uncurry-∘ ⟩
+    uncurry internal-∘ ∘ ((internal-∘ ⊗₁ id) ⊗₁ id)
+      ≈⟨ eval-internal-∘ ⟩∘⟨refl ⟩
+    (eval ∘ (id ⊗₁ eval) ∘ α⇒) ∘ ((internal-∘ ⊗₁ id) ⊗₁ id)
+      ≈⟨ pull-last assoc-commute-from ⟩
+    eval ∘ (id ⊗₁ eval) ∘ (internal-∘ ⊗₁ (id ⊗₁ id)) ∘ α⇒
+      ≈⟨ refl⟩∘⟨ pullˡ evaluation-interchange ⟩
+    eval ∘ ((internal-∘ ⊗₁ id) ∘ (id ⊗₁ eval)) ∘ α⇒
+      ≈⟨ refl⟩∘⟨ assoc ⟩
+    eval ∘ (internal-∘ ⊗₁ id) ∘ (id ⊗₁ eval) ∘ α⇒  ≈⟨ pullˡ eval-internal-∘ ⟩
+    (eval ∘ (id ⊗₁ eval) ∘ α⇒) ∘ (id ⊗₁ eval) ∘ α⇒  ≈⟨ assoc²βε ⟩
+    eval ∘ (id ⊗₁ eval) ∘ α⇒ ∘ (id ⊗₁ eval) ∘ α⇒
+      ≈⟨ refl⟩∘⟨ refl⟩∘⟨ pullˡ α⇒-id⊗-commute ⟩
+    eval ∘ (id ⊗₁ eval) ∘ ((id ⊗₁ (id ⊗₁ eval)) ∘ α⇒) ∘ α⇒
+      ≈⟨ refl⟩∘⟨ refl⟩∘⟨ assoc ⟩
+    eval ∘ (id ⊗₁ eval) ∘ (id ⊗₁ (id ⊗₁ eval)) ∘ α⇒ ∘ α⇒
+      ≈˘⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ pentagon ⟩
+    eval ∘ (id ⊗₁ eval) ∘ (id ⊗₁ (id ⊗₁ eval)) ∘ (id ⊗₁ α⇒)
+      ∘ α⇒ ∘ (α⇒ ⊗₁ id)
+      ≈˘⟨ refl⟩∘⟨ expand-nested-evaluation ⟩
+    eval ∘ (id ⊗₁ (eval ∘ (id ⊗₁ eval) ∘ α⇒)) ∘ α⇒ ∘ (α⇒ ⊗₁ id)
+      ≈˘⟨ refl⟩∘⟨ (refl⟩⊗⟨ eval-internal-∘) ⟩∘⟨refl ⟩
+    eval ∘ (id ⊗₁ uncurry internal-∘) ∘ α⇒ ∘ (α⇒ ⊗₁ id)
+      ≈˘⟨ refl⟩∘⟨ pullˡ merge₂ˡ ⟩
+    eval ∘ (id ⊗₁ eval) ∘ (id ⊗₁ (internal-∘ ⊗₁ id)) ∘ α⇒ ∘ (α⇒ ⊗₁ id)
+      ≈˘⟨ refl⟩∘⟨ refl⟩∘⟨ assoc ⟩
+    eval ∘ (id ⊗₁ eval) ∘ ((id ⊗₁ (internal-∘ ⊗₁ id)) ∘ α⇒) ∘ (α⇒ ⊗₁ id)
+      ≈˘⟨ refl⟩∘⟨ refl⟩∘⟨ pullˡ assoc-commute-from ⟩
+    eval ∘ (id ⊗₁ eval) ∘ α⇒ ∘ ((id ⊗₁ internal-∘) ⊗₁ id) ∘ (α⇒ ⊗₁ id)
+      ≈˘⟨ assoc²βε ⟩
+    (eval ∘ (id ⊗₁ eval) ∘ α⇒) ∘ ((id ⊗₁ internal-∘) ⊗₁ id) ∘ (α⇒ ⊗₁ id)
+      ≈˘⟨ refl⟩∘⟨ split₁ˡ ⟩
+    (eval ∘ (id ⊗₁ eval) ∘ α⇒) ∘ (((id ⊗₁ internal-∘) ∘ α⇒) ⊗₁ id)
+      ≈˘⟨ eval-internal-∘ ⟩∘⟨refl ⟩
+    uncurry internal-∘ ∘ (((id ⊗₁ internal-∘) ∘ α⇒) ⊗₁ id)  ≈˘⟨ uncurry-∘ ⟩
+    uncurry (internal-∘ ∘ (id ⊗₁ internal-∘) ∘ α⇒)  ∎)
+    where
+      evaluation-interchange :
+        (id ⊗₁ eval) ∘ (internal-∘ ⊗₁ (id ⊗₁ id))
+          ≈ (internal-∘ ⊗₁ id) ∘ (id ⊗₁ eval)
+      evaluation-interchange = begin
+        (id ⊗₁ eval) ∘ (internal-∘ ⊗₁ (id ⊗₁ id))  ≈⟨ ⟺ ⊗.homomorphism ⟩
+        (id ∘ internal-∘) ⊗₁ (eval ∘ (id ⊗₁ id))    ≈⟨ identityˡ ⟩⊗⟨ elimʳ ⊗.identity ⟩
+        internal-∘ ⊗₁ eval                            ≈⟨ serialize₁₂ ⟩
+        (internal-∘ ⊗₁ id) ∘ (id ⊗₁ eval)            ∎
+
+      expand-nested-evaluation :
+        (id ⊗₁ (eval ∘ (id ⊗₁ eval) ∘ α⇒)) ∘ α⇒ ∘ (α⇒ ⊗₁ id)
+          ≈ (id ⊗₁ eval) ∘ (id ⊗₁ (id ⊗₁ eval)) ∘ (id ⊗₁ α⇒)
+            ∘ α⇒ ∘ (α⇒ ⊗₁ id)
+      expand-nested-evaluation = begin
+        (id ⊗₁ (eval ∘ (id ⊗₁ eval) ∘ α⇒)) ∘ (α⇒ ∘ (α⇒ ⊗₁ id))
+          ≈⟨ split₂³ ⟩∘⟨refl ⟩
+        ((id ⊗₁ eval) ∘ (id ⊗₁ (id ⊗₁ eval)) ∘ (id ⊗₁ α⇒))
+          ∘ (α⇒ ∘ (α⇒ ⊗₁ id))
+          ≈⟨ assoc²βε ⟩
+        (id ⊗₁ eval) ∘ (id ⊗₁ (id ⊗₁ eval)) ∘ (id ⊗₁ α⇒)
+          ∘ α⇒ ∘ (α⇒ ⊗₁ id)  ∎
+
+------------------------------------------------------------------------
+-- The canonical self-enrichment and its ordinary hom-set bridge.
+
+selfEnrichment : Enriched.Category M o
+selfEnrichment = record
+  { Obj = Obj
+  ; hom = [_,_]₀
+  ; id = ⌜id⌝
+  ; ⊚ = internal-∘
+  ; ⊚-assoc = internal-∘-assoc
+  ; unitˡ = internal-∘-idˡ
+  ; unitʳ = internal-∘-idʳ
+  }
+
+⌞_⌟ᶜ : (unit ⇒ [ A , B ]₀) → A ⇒ B
+⌞ f ⌟ᶜ = uncurry f ∘ λ⇐
+
+⌞⌜⌝⌟ᶜ : {f : A ⇒ B} → ⌞ ⌜ f ⌝ ⌟ᶜ ≈ f
+⌞⌜⌝⌟ᶜ {f = f} = begin
+  uncurry ⌜ f ⌝ ∘ λ⇐  ≈⟨ eval-⌜⌝ ⟩∘⟨refl ⟩
+  (f ∘ λ⇒) ∘ λ⇐      ≈⟨ cancelʳ unitorˡ.isoʳ ⟩
+  f                   ∎
+
+⌜⌞⌟⌝ᶜ : {f : unit ⇒ [ A , B ]₀} → ⌜ ⌞ f ⌟ᶜ ⌝ ≈ f
+⌜⌞⌟⌝ᶜ {f = f} = uncurry-injective (begin
+  uncurry ⌜ uncurry f ∘ λ⇐ ⌝  ≈⟨ eval-⌜⌝ ⟩
+  (uncurry f ∘ λ⇐) ∘ λ⇒      ≈⟨ cancelʳ unitorˡ.isoˡ ⟩
+  uncurry f                   ∎)
+
+-- Applying an internal map to the name of `g` is ordinary precomposition by `g`.
+uncurry-∘-⌜⌝ʳ : {f : W ⇒ [ B , C ]₀} {g : A ⇒ B} →
+  uncurry (internal-∘ ∘ (f ⊗₁ ⌜ g ⌝) ∘ ρ⇐) ≈ uncurry f ∘ (id ⊗₁ g)
+uncurry-∘-⌜⌝ʳ {f = f} {g} = begin
+  uncurry (internal-∘ ∘ (f ⊗₁ ⌜ g ⌝) ∘ ρ⇐)
+    ≈⟨ uncurry-resp-≈ sym-assoc ⟩
+  uncurry ((internal-∘ ∘ (f ⊗₁ ⌜ g ⌝)) ∘ ρ⇐)
+    ≈⟨ uncurry-∘ ⟩
+  uncurry (internal-∘ ∘ (f ⊗₁ ⌜ g ⌝)) ∘ (ρ⇐ ⊗₁ id)
+    ≈⟨ uncurry-resp-≈ (internal-∘-curry′ f ⌜ g ⌝) ⟩∘⟨refl ⟩
+  uncurry (curry (uncurry f ∘ (id ⊗₁ uncurry ⌜ g ⌝) ∘ α⇒)) ∘ (ρ⇐ ⊗₁ id)
+    ≈⟨ eval-curry ⟩∘⟨refl ⟩
+  (uncurry f ∘ (id ⊗₁ uncurry ⌜ g ⌝) ∘ α⇒) ∘ (ρ⇐ ⊗₁ id)
     ≈⟨ assoc²βε ⟩
-  eval ∘ (id ⊗₁ eval) ∘ α⇒ ∘ ((id ⊗₁ ⌜id⌝) ⊗₁ id)  ≈⟨ refl⟩∘⟨ refl⟩∘⟨ assoc-commute-from ⟩
-  eval ∘ (id ⊗₁ eval) ∘ (id ⊗₁ (⌜id⌝ ⊗₁ id)) ∘ α⇒  ≈⟨ refl⟩∘⟨ pullˡ merge₂ˡ ⟩
-  eval ∘ (id ⊗₁ (eval ∘ (⌜id⌝ ⊗₁ id))) ∘ α⇒        ≈⟨ refl⟩∘⟨ (refl⟩⊗⟨ eval-⌜id⌝) ⟩∘⟨refl ⟩
-  eval ∘ (id ⊗₁ λ⇒) ∘ α⇒                      ≈⟨ refl⟩∘⟨ triangle ⟩
-  eval ∘ (ρ⇒ ⊗₁ id)                           ∎)
+  uncurry f ∘ (id ⊗₁ uncurry ⌜ g ⌝) ∘ α⇒ ∘ (ρ⇐ ⊗₁ id)
+    ≈⟨ refl⟩∘⟨ (refl⟩⊗⟨ eval-⌜⌝) ⟩∘⟨refl ⟩
+  uncurry f ∘ (id ⊗₁ (g ∘ λ⇒)) ∘ α⇒ ∘ (ρ⇐ ⊗₁ id)
+    ≈⟨ refl⟩∘⟨ pushˡ split₂ʳ ⟩
+  uncurry f ∘ (id ⊗₁ g) ∘ ((id ⊗₁ λ⇒) ∘ α⇒ ∘ (ρ⇐ ⊗₁ id))
+    ≈⟨ refl⟩∘⟨ refl⟩∘⟨ pullˡ triangle ⟩
+  uncurry f ∘ (id ⊗₁ g) ∘ ((ρ⇒ ⊗₁ id) ∘ (ρ⇐ ⊗₁ id))
+    ≈⟨ refl⟩∘⟨ elimʳ (⊗-cancel unitorʳ.isoʳ identity²) ⟩
+  uncurry f ∘ (id ⊗₁ g)  ∎
+
+-- Applying the name of `g` on the left is ordinary postcomposition by `g`.
+uncurry-∘-⌜⌝ˡ : {f : W ⇒ [ A , B ]₀} {g : B ⇒ C} →
+  uncurry (internal-∘ ∘ (⌜ g ⌝ ⊗₁ f) ∘ λ⇐) ≈ g ∘ uncurry f
+uncurry-∘-⌜⌝ˡ {W = W} {A = A} {f = f} {g} = begin
+  uncurry (internal-∘ ∘ (⌜ g ⌝ ⊗₁ f) ∘ λ⇐)
+    ≈⟨ uncurry-resp-≈ sym-assoc ⟩
+  uncurry ((internal-∘ ∘ (⌜ g ⌝ ⊗₁ f)) ∘ λ⇐)
+    ≈⟨ uncurry-∘ ⟩
+  uncurry (internal-∘ ∘ (⌜ g ⌝ ⊗₁ f)) ∘ (λ⇐ ⊗₁ id)
+    ≈⟨ uncurry-resp-≈ (internal-∘-curry′ ⌜ g ⌝ f) ⟩∘⟨refl ⟩
+  uncurry (curry (uncurry ⌜ g ⌝ ∘ (id ⊗₁ uncurry f) ∘ α⇒)) ∘ (λ⇐ ⊗₁ id)
+    ≈⟨ eval-curry ⟩∘⟨refl ⟩
+  (uncurry ⌜ g ⌝ ∘ (id ⊗₁ uncurry f) ∘ α⇒) ∘ (λ⇐ ⊗₁ id)
+    ≈⟨ assoc²βε ⟩
+  uncurry ⌜ g ⌝ ∘ (id ⊗₁ uncurry f) ∘ α⇒ ∘ (λ⇐ ⊗₁ id)
+    ≈⟨ eval-⌜⌝ ⟩∘⟨refl ⟩
+  (g ∘ λ⇒) ∘ (id ⊗₁ uncurry f) ∘ α⇒ ∘ (λ⇐ ⊗₁ id)
+    ≈⟨ pullʳ unit-parameter ⟩
+  g ∘ uncurry f  ∎
+  where
+    unit-parameter : λ⇒ ∘ (id ⊗₁ uncurry f) ∘ α⇒ ∘ (λ⇐ {W} ⊗₁ id {A}) ≈ uncurry f
+    unit-parameter = begin
+      λ⇒ ∘ (id ⊗₁ uncurry f) ∘ α⇒ ∘ (λ⇐ ⊗₁ id)
+        ≈⟨ pullˡ unitorˡ-commute-from ⟩
+      (uncurry f ∘ λ⇒) ∘ α⇒ ∘ (λ⇐ ⊗₁ id)  ≈⟨ assoc ⟩
+      uncurry f ∘ λ⇒ ∘ α⇒ ∘ (λ⇐ ⊗₁ id)
+        ≈⟨ refl⟩∘⟨ refl⟩∘⟨ λ⇐-assoc ⟩
+      uncurry f ∘ λ⇒ ∘ λ⇐  ≈⟨ elimʳ unitorˡ.isoʳ ⟩
+      uncurry f  ∎
+
+-- Composition in the underlying self-enrichment is naming ordinary composition.
+⌜∘⌝ : {f : B ⇒ C} {g : A ⇒ B} →
+  internal-∘ ∘ (⌜ f ⌝ ⊗₁ ⌜ g ⌝) ∘ λ⇐ ≈ ⌜ f ∘ g ⌝
+⌜∘⌝ {f = f} {g} = uncurry-injective (begin
+  uncurry (internal-∘ ∘ (⌜ f ⌝ ⊗₁ ⌜ g ⌝) ∘ λ⇐)
+    ≈⟨ uncurry-∘-⌜⌝ˡ ⟩
+  f ∘ uncurry ⌜ g ⌝  ≈⟨ refl⟩∘⟨ eval-⌜⌝ ⟩
+  f ∘ g ∘ λ⇒         ≈˘⟨ assoc ⟩
+  (f ∘ g) ∘ λ⇒       ≈˘⟨ eval-⌜⌝ ⟩
+  uncurry ⌜ f ∘ g ⌝  ∎)
+
+abstract
+  uncurry²-∘-⌜⌝ʳ : {f : W ⇒ [ B , [ C , Z ]₀ ]₀} {g : A ⇒ B} →
+    uncurry (uncurry (internal-∘ ∘ (f ⊗₁ ⌜ g ⌝) ∘ ρ⇐))
+    ≈ uncurry (uncurry f) ∘ ((id ⊗₁ g) ⊗₁ id)
+  uncurry²-∘-⌜⌝ʳ {f = f} {g} = begin
+    uncurry (uncurry (internal-∘ ∘ (f ⊗₁ ⌜ g ⌝) ∘ ρ⇐))
+      ≈⟨ uncurry-resp-≈ uncurry-∘-⌜⌝ʳ ⟩
+    uncurry (uncurry f ∘ (id ⊗₁ g))  ≈⟨ uncurry-∘ ⟩
+    uncurry (uncurry f) ∘ ((id ⊗₁ g) ⊗₁ id)  ∎
 
 ------------------------------------------------------------------------
 -- `unit-hom : X ≅ [ unit , X ]₀`.  A function of no arguments is a value.
@@ -164,26 +424,32 @@ unit-hom⇒ = curry ρ⇒
 unit-hom⇐ : [ unit , X ]₀ ⇒ X
 unit-hom⇐ = eval ∘ ρ⇐
 
+unit-hom⇐-natural : {f : X ⇒ Y} → unit-hom⇐ ∘ [ id , f ]₁ ≈ f ∘ unit-hom⇐
+unit-hom⇐-natural {f = f} = begin
+  (eval ∘ ρ⇐) ∘ [ id , f ]₁        ≈⟨ pullʳ unitorʳ-commute-to ⟩
+  eval ∘ ([ id , f ]₁ ⊗₁ id) ∘ ρ⇐  ≈⟨ pullˡ eval-comm-cod ⟩
+  (f ∘ eval) ∘ ρ⇐                  ≈⟨ assoc ⟩
+  f ∘ unit-hom⇐                    ∎
+
 eval-unit-hom⇒ : uncurry (unit-hom⇒ {X}) ≈ ρ⇒
 eval-unit-hom⇒ = eval-curry
 
-unit-hom-isoˡ : unit-hom⇐ ∘ unit-hom⇒ ≈ id {X}
-unit-hom-isoˡ = begin
-  (eval ∘ ρ⇐) ∘ unit-hom⇒        ≈⟨ pullʳ unitorʳ-commute-to ⟩
-  eval ∘ (unit-hom⇒ ⊗₁ id) ∘ ρ⇐  ≈⟨ pullˡ eval-unit-hom⇒ ⟩
-  ρ⇒ ∘ ρ⇐               ≈⟨ unitorʳ.isoʳ ⟩
-  id                    ∎
+abstract
+  unit-hom-isoˡ : unit-hom⇐ ∘ unit-hom⇒ ≈ id {X}
+  unit-hom-isoˡ = begin
+    (eval ∘ ρ⇐) ∘ unit-hom⇒        ≈⟨ pullʳ unitorʳ-commute-to ⟩
+    eval ∘ (unit-hom⇒ ⊗₁ id) ∘ ρ⇐  ≈⟨ pullˡ eval-unit-hom⇒ ⟩
+    ρ⇒ ∘ ρ⇐                        ≈⟨ unitorʳ.isoʳ ⟩
+    id                             ∎
 
-unit-hom-isoʳ : unit-hom⇒ ∘ unit-hom⇐ ≈ id {[ unit , X ]₀}
-unit-hom-isoʳ = uncurry-injective (begin
-  eval ∘ ((unit-hom⇒ ∘ unit-hom⇐) ⊗₁ id)          ≈⟨ refl⟩∘⟨ split₁ˡ ⟩
-  eval ∘ (unit-hom⇒ ⊗₁ id) ∘ (unit-hom⇐ ⊗₁ id)    ≈⟨ pullˡ eval-unit-hom⇒ ⟩
-  ρ⇒ ∘ (unit-hom⇐ ⊗₁ id)                 ≈⟨ unitorʳ-commute-from ⟩
-  unit-hom⇐ ∘ ρ⇒                         ≈⟨ assoc ⟩
-  eval ∘ ρ⇐ ∘ ρ⇒                    ≈⟨ refl⟩∘⟨ unitorʳ.isoˡ ⟩
-  eval ∘ id                         ≈⟨ identityʳ ⟩
-  eval                              ≈˘⟨ elimʳ ⊗.identity ⟩
-  eval ∘ (id ⊗₁ id)                 ∎)
+  unit-hom-isoʳ : unit-hom⇒ ∘ unit-hom⇐ ≈ id {[ unit , X ]₀}
+  unit-hom-isoʳ = uncurry-injective (begin
+    eval ∘ ((unit-hom⇒ ∘ unit-hom⇐) ⊗₁ id)          ≈⟨ refl⟩∘⟨ split₁ˡ ⟩
+    eval ∘ (unit-hom⇒ ⊗₁ id) ∘ (unit-hom⇐ ⊗₁ id)    ≈⟨ pullˡ eval-unit-hom⇒ ⟩
+    ρ⇒ ∘ (unit-hom⇐ ⊗₁ id)                          ≈⟨ unitorʳ-commute-from ⟩
+    unit-hom⇐ ∘ ρ⇒                                  ≈⟨ cancelʳ unitorʳ.isoˡ ⟩
+    eval                                            ≈˘⟨ elimʳ ⊗.identity ⟩
+    eval ∘ (id ⊗₁ id)                               ∎)
 
 unit-hom : X ≅ [ unit , X ]₀
 unit-hom = record { from = unit-hom⇒ ; to = unit-hom⇐ ; iso = record { isoˡ = unit-hom-isoˡ ; isoʳ = unit-hom-isoʳ } }
@@ -194,16 +460,16 @@ unit-hom = record { from = unit-hom⇒ ; to = unit-hom⇐ ; iso = record { isoˡ
 
 ⌜id⌝≈unit-hom⇒ : ⌜id⌝ {unit} ≈ unit-hom⇒
 ⌜id⌝≈unit-hom⇒ = uncurry-injective (begin
-  uncurry (⌜id⌝ {unit})  ≈⟨ eval-⌜id⌝ ⟩
-  λ⇒                  ≈⟨ coherence₃ ⟩
-  ρ⇒                  ≈˘⟨ eval-unit-hom⇒ ⟩
-  uncurry unit-hom⇒          ∎)
+  uncurry (⌜id⌝ {unit})             ≈⟨ eval-⌜id⌝ ⟩
+  λ⇒                                ≈⟨ coherence₃ ⟩
+  ρ⇒                                ≈˘⟨ eval-unit-hom⇒ ⟩
+  uncurry unit-hom⇒                 ∎)
 
 unit-hom⇐-⌜id⌝ : unit-hom⇐ ∘ ⌜id⌝ {unit} ≈ id
 unit-hom⇐-⌜id⌝ = begin
-  unit-hom⇐ ∘ ⌜id⌝    ≈⟨ refl⟩∘⟨ ⌜id⌝≈unit-hom⇒ ⟩
+  unit-hom⇐ ∘ ⌜id⌝        ≈⟨ refl⟩∘⟨ ⌜id⌝≈unit-hom⇒ ⟩
   unit-hom⇐ ∘ unit-hom⇒   ≈⟨ unit-hom-isoˡ ⟩
-  id        ∎
+  id                      ∎
 
 ------------------------------------------------------------------------
 -- Evaluation is composition with a value.  Read the argument as a map out of the
@@ -218,201 +484,18 @@ private
     (ρ⇒ ∘ α⇐) ∘ α⇒   ≈⟨ cancelʳ associator.isoˡ ⟩
     ρ⇒               ∎
 
-internal-∘-unit-hom : unit-hom⇐ ∘ internal-∘ {Y} {Z} {unit} ∘ (id ⊗₁ unit-hom⇒) ≈ eval
-internal-∘-unit-hom = begin
-  (eval ∘ ρ⇐) ∘ internal-∘ ∘ (id ⊗₁ unit-hom⇒)                    ≈⟨ assoc ⟩
-  eval ∘ ρ⇐ ∘ internal-∘ ∘ (id ⊗₁ unit-hom⇒)                      ≈⟨ refl⟩∘⟨ pullˡ unitorʳ-commute-to ⟩
-  eval ∘ ((internal-∘ ⊗₁ id) ∘ ρ⇐) ∘ (id ⊗₁ unit-hom⇒)            ≈⟨ refl⟩∘⟨ assoc ⟩
-  eval ∘ (internal-∘ ⊗₁ id) ∘ ρ⇐ ∘ (id ⊗₁ unit-hom⇒)              ≈⟨ refl⟩∘⟨ refl⟩∘⟨ unitorʳ-commute-to ⟩
-  eval ∘ (internal-∘ ⊗₁ id) ∘ ((id ⊗₁ unit-hom⇒) ⊗₁ id) ∘ ρ⇐      ≈⟨ pullˡ eval-internal-∘ ⟩
-  (eval ∘ (id ⊗₁ eval) ∘ α⇒) ∘ ((id ⊗₁ unit-hom⇒) ⊗₁ id) ∘ ρ⇐  ≈⟨ assoc²βε ⟩
-  eval ∘ (id ⊗₁ eval) ∘ α⇒ ∘ ((id ⊗₁ unit-hom⇒) ⊗₁ id) ∘ ρ⇐
-    ≈⟨ refl⟩∘⟨ refl⟩∘⟨ extendʳ assoc-commute-from ⟩
-  eval ∘ (id ⊗₁ eval) ∘ (id ⊗₁ (unit-hom⇒ ⊗₁ id)) ∘ α⇒ ∘ ρ⇐   ≈⟨ refl⟩∘⟨ pullˡ merge₂ˡ ⟩
-  eval ∘ (id ⊗₁ (eval ∘ (unit-hom⇒ ⊗₁ id))) ∘ α⇒ ∘ ρ⇐         ≈⟨ refl⟩∘⟨ (refl⟩⊗⟨ eval-unit-hom⇒) ⟩∘⟨refl ⟩
-  eval ∘ (id ⊗₁ ρ⇒) ∘ α⇒ ∘ ρ⇐                        ≈⟨ refl⟩∘⟨ pullˡ ρ⇒-α⇒ ⟩
-  eval ∘ ρ⇒ ∘ ρ⇐                                     ≈⟨ elimʳ unitorʳ.isoʳ ⟩
-  eval                                               ∎
-
-------------------------------------------------------------------------
--- The currying isomorphism `[ A ⊗₀ B , C ]₀ ≅ [ A , [ B , C ]₀ ]₀`.  A function of a
--- pair is a function of the first argument returning a function of the second; the two
--- associators inside `curry₂`/`uncurry₂` re-bracket `(W ⊗₀ A) ⊗₀ B` and `W ⊗₀ (A ⊗₀ B)`.
-
--- Uncurrying distributes over precomposition (whiskered into the argument), and
--- respects equality of the argument.
-uncurry-∘ : {g : B ⇒ [ X , Y ]₀} {h : A ⇒ B} → uncurry (g ∘ h) ≈ uncurry g ∘ (h ⊗₁ id)
-uncurry-∘ = (refl⟩∘⟨ split₁ˡ) ○ sym-assoc
-
-uncurry-resp-≈ : {g h : A ⇒ [ X , Y ]₀} → g ≈ h → uncurry g ≈ uncurry h
-uncurry-resp-≈ p = refl⟩∘⟨ (p ⟩⊗⟨refl)
-
-curry₂ : [ A ⊗₀ B , C ]₀ ⇒ [ A , [ B , C ]₀ ]₀
-curry₂ = curry (curry (eval ∘ α⇒))
-
-uncurry₂ : [ A , [ B , C ]₀ ]₀ ⇒ [ A ⊗₀ B , C ]₀
-uncurry₂ = curry (uncurry eval ∘ α⇐)
-
-curry₂-iso-uncurry₂ : uncurry₂ {A} {B} {C} ∘ curry₂ ≈ id
-curry₂-iso-uncurry₂ = uncurry-injective (begin
-  uncurry (uncurry₂ ∘ curry₂)                        ≈⟨ uncurry-∘ ⟩
-  uncurry uncurry₂ ∘ (curry₂ ⊗₁ id)                  ≈⟨ eval-curry ⟩∘⟨refl ⟩
-  (uncurry eval ∘ α⇐) ∘ (curry₂ ⊗₁ id)                 ≈⟨ assoc ⟩
-  uncurry eval ∘ α⇐ ∘ (curry₂ ⊗₁ id)                   ≈⟨ refl⟩∘⟨ α⇐-⊗id-commute ⟩
-  uncurry eval ∘ ((curry₂ ⊗₁ id) ⊗₁ id) ∘ α⇐           ≈⟨ sym-assoc ⟩
-  (uncurry eval ∘ ((curry₂ ⊗₁ id) ⊗₁ id)) ∘ α⇐         ≈˘⟨ uncurry-∘ ⟩∘⟨refl ⟩
-  uncurry (eval ∘ (curry₂ ⊗₁ id)) ∘ α⇐                 ≈⟨ uncurry-resp-≈ eval-curry ⟩∘⟨refl ⟩
-  uncurry (curry (eval ∘ α⇒)) ∘ α⇐                     ≈⟨ eval-curry ⟩∘⟨refl ⟩
-  (eval ∘ α⇒) ∘ α⇐                                     ≈⟨ cancelʳ associator.isoʳ ⟩
-  eval                                                 ≈˘⟨ elimʳ ⊗.identity ⟩
-  eval ∘ (id ⊗₁ id)                                    ∎)
-
--- Two maps into a doubly-iterated hom object agree when their double uncurryings do.
-uncurry²-injective : {g h : W ⇒ [ A , [ B , C ]₀ ]₀} →
-  uncurry (uncurry g) ≈ uncurry (uncurry h) → g ≈ h
-uncurry²-injective p = uncurry-injective (uncurry-injective p)
-
-uncurry₂-iso-curry₂ : curry₂ {A} {B} {C} ∘ uncurry₂ ≈ id
-uncurry₂-iso-curry₂ = uncurry²-injective (begin
-  uncurry (uncurry (curry₂ ∘ uncurry₂))              ≈⟨ uncurry-resp-≈ uncurry-∘ ⟩
-  uncurry (uncurry curry₂ ∘ (uncurry₂ ⊗₁ id))        ≈⟨ uncurry-∘ ⟩
-  uncurry (uncurry curry₂) ∘ ((uncurry₂ ⊗₁ id) ⊗₁ id)
-    ≈⟨ uncurry-resp-≈ eval-curry ⟩∘⟨refl ⟩
-  uncurry (curry (eval ∘ α⇒)) ∘ ((uncurry₂ ⊗₁ id) ⊗₁ id)
-    ≈⟨ eval-curry ⟩∘⟨refl ⟩
-  (eval ∘ α⇒) ∘ ((uncurry₂ ⊗₁ id) ⊗₁ id)              ≈⟨ pullʳ α⇒-⊗id-commute ⟩
-  eval ∘ (uncurry₂ ⊗₁ id) ∘ α⇒                        ≈⟨ pullˡ eval-curry ⟩
-  (uncurry eval ∘ α⇐) ∘ α⇒                            ≈⟨ cancelʳ associator.isoˡ ⟩
-  uncurry eval                                        ≈˘⟨ uncurry-resp-≈ (elimʳ ⊗.identity) ⟩
-  uncurry (eval ∘ (id ⊗₁ id))                         ∎)
-
-curry₂-iso : [ A ⊗₀ B , C ]₀ ≅ [ A , [ B , C ]₀ ]₀
-curry₂-iso = record
-  { from = curry₂ ; to = uncurry₂
-  ; iso = record { isoˡ = curry₂-iso-uncurry₂ ; isoʳ = uncurry₂-iso-curry₂ } }
-
--- Double β for `curry₂`: uncurrying it twice recovers `ev ∘ α⇒`.
-uncurry²-curry₂ : uncurry (uncurry (curry₂ {A} {B} {C})) ≈ eval ∘ α⇒
-uncurry²-curry₂ = uncurry-resp-≈ eval-curry ○ eval-curry
-
--- Naturality of the currying isomorphism.  `curry₂` is a natural transformation,
--- contravariant in `A` and `B`, covariant in `C`.  Double-uncurrying both sides and
--- reducing evaluation past the hom-functor actions (`ev-comm`) lands both on the common
--- form `h ∘ eval ∘ (id ⊗₁ (f ⊗₁ g)) ∘ α⇒`.
-curry₂-natural : {f : X ⇒ A} {g : Y ⇒ B} {h : C ⇒ Z} →
-  [ f , [ g , h ]₁ ]₁ ∘ curry₂ ≈ curry₂ ∘ [ f ⊗₁ g , h ]₁
-curry₂-natural {f = f} {g = g} {h = h} = uncurry²-injective (lhs ○ ⟺ rhs)
-  where
-    reduce-ev : (eval ∘ (id ⊗₁ g)) ∘ (curry (eval ∘ α⇒) ⊗₁ id) ≈ (eval ∘ α⇒) ∘ (id ⊗₁ g)
-    reduce-ev = begin
-      (eval ∘ (id ⊗₁ g)) ∘ (curry (eval ∘ α⇒) ⊗₁ id)  ≈⟨ assoc ⟩
-      eval ∘ (id ⊗₁ g) ∘ (curry (eval ∘ α⇒) ⊗₁ id)    ≈˘⟨ refl⟩∘⟨ serialize₂₁ ⟩
-      eval ∘ (curry (eval ∘ α⇒) ⊗₁ g)                  ≈⟨ refl⟩∘⟨ serialize₁₂ ⟩
-      eval ∘ (curry (eval ∘ α⇒) ⊗₁ id) ∘ (id ⊗₁ g)    ≈⟨ pullˡ eval-curry ⟩
-      (eval ∘ α⇒) ∘ (id ⊗₁ g)                        ∎
-    core : (eval ∘ (id ⊗₁ g)) ∘ (curry (eval ∘ α⇒) ⊗₁ id) ∘ ((id ⊗₁ f) ⊗₁ id)
-         ≈ eval ∘ (id ⊗₁ (f ⊗₁ g)) ∘ α⇒
-    core = begin
-      (eval ∘ (id ⊗₁ g)) ∘ (curry (eval ∘ α⇒) ⊗₁ id) ∘ ((id ⊗₁ f) ⊗₁ id)
-        ≈⟨ sym-assoc ⟩
-      ((eval ∘ (id ⊗₁ g)) ∘ (curry (eval ∘ α⇒) ⊗₁ id)) ∘ ((id ⊗₁ f) ⊗₁ id)
-        ≈⟨ reduce-ev ⟩∘⟨refl ⟩
-      ((eval ∘ α⇒) ∘ (id ⊗₁ g)) ∘ ((id ⊗₁ f) ⊗₁ id)
-        ≈⟨ assoc ⟩
-      (eval ∘ α⇒) ∘ ((id ⊗₁ g) ∘ ((id ⊗₁ f) ⊗₁ id))
-        ≈⟨ refl⟩∘⟨ merge₂ˡ ⟩
-      (eval ∘ α⇒) ∘ ((id ⊗₁ f) ⊗₁ (g ∘ id))
-        ≈⟨ refl⟩∘⟨ (refl⟩⊗⟨ identityʳ) ⟩
-      (eval ∘ α⇒) ∘ ((id ⊗₁ f) ⊗₁ g)
-        ≈⟨ assoc ⟩
-      eval ∘ α⇒ ∘ ((id ⊗₁ f) ⊗₁ g)
-        ≈⟨ refl⟩∘⟨ assoc-commute-from ⟩
-      eval ∘ (id ⊗₁ (f ⊗₁ g)) ∘ α⇒
-        ∎
-    rhs : uncurry (uncurry (curry₂ ∘ [ f ⊗₁ g , h ]₁)) ≈ h ∘ eval ∘ (id ⊗₁ (f ⊗₁ g)) ∘ α⇒
-    rhs = begin
-      uncurry (uncurry (curry₂ ∘ [ f ⊗₁ g , h ]₁))
-        ≈⟨ uncurry-resp-≈ uncurry-∘ ⟩
-      uncurry (uncurry curry₂ ∘ ([ f ⊗₁ g , h ]₁ ⊗₁ id))
-        ≈⟨ uncurry-∘ ⟩
-      uncurry (uncurry curry₂) ∘ (([ f ⊗₁ g , h ]₁ ⊗₁ id) ⊗₁ id)
-        ≈⟨ uncurry²-curry₂ ⟩∘⟨refl ⟩
-      (eval ∘ α⇒) ∘ (([ f ⊗₁ g , h ]₁ ⊗₁ id) ⊗₁ id)
-        ≈⟨ assoc ⟩
-      eval ∘ α⇒ ∘ (([ f ⊗₁ g , h ]₁ ⊗₁ id) ⊗₁ id)
-        ≈⟨ refl⟩∘⟨ α⇒-⊗id-commute ⟩
-      eval ∘ ([ f ⊗₁ g , h ]₁ ⊗₁ id) ∘ α⇒
-        ≈⟨ pullˡ eval-comm ⟩
-      (h ∘ eval ∘ (id ⊗₁ (f ⊗₁ g))) ∘ α⇒
-        ≈⟨ assoc ⟩
-      h ∘ (eval ∘ (id ⊗₁ (f ⊗₁ g))) ∘ α⇒
-        ≈⟨ refl⟩∘⟨ assoc ⟩
-      h ∘ eval ∘ (id ⊗₁ (f ⊗₁ g)) ∘ α⇒
-        ∎
-    lhs : uncurry (uncurry ([ f , [ g , h ]₁ ]₁ ∘ curry₂)) ≈ h ∘ eval ∘ (id ⊗₁ (f ⊗₁ g)) ∘ α⇒
-    lhs = begin
-      uncurry (uncurry ([ f , [ g , h ]₁ ]₁ ∘ curry₂))
-        ≈⟨ uncurry-resp-≈ uncurry-∘ ⟩
-      uncurry (uncurry [ f , [ g , h ]₁ ]₁ ∘ (curry₂ ⊗₁ id))
-        ≈⟨ uncurry-∘ ⟩
-      uncurry (uncurry [ f , [ g , h ]₁ ]₁) ∘ ((curry₂ ⊗₁ id) ⊗₁ id)
-        ≈⟨ uncurry-resp-≈ eval-comm ⟩∘⟨refl ⟩
-      uncurry ([ g , h ]₁ ∘ eval ∘ (id ⊗₁ f)) ∘ ((curry₂ ⊗₁ id) ⊗₁ id)
-        ≈⟨ uncurry-∘ ⟩∘⟨refl ⟩
-      (uncurry [ g , h ]₁ ∘ ((eval ∘ (id ⊗₁ f)) ⊗₁ id)) ∘ ((curry₂ ⊗₁ id) ⊗₁ id)
-        ≈⟨ (eval-comm ⟩∘⟨refl) ⟩∘⟨refl ⟩
-      ((h ∘ eval ∘ (id ⊗₁ g)) ∘ ((eval ∘ (id ⊗₁ f)) ⊗₁ id)) ∘ ((curry₂ ⊗₁ id) ⊗₁ id)
-        ≈⟨ assoc ⟩
-      (h ∘ eval ∘ (id ⊗₁ g)) ∘ (((eval ∘ (id ⊗₁ f)) ⊗₁ id) ∘ ((curry₂ ⊗₁ id) ⊗₁ id))
-        ≈⟨ refl⟩∘⟨ merge₁ˡ ⟩
-      (h ∘ eval ∘ (id ⊗₁ g)) ∘ (((eval ∘ (id ⊗₁ f)) ∘ (curry₂ ⊗₁ id)) ⊗₁ id)
-        ≈⟨ refl⟩∘⟨ (assoc ⟩⊗⟨refl) ⟩
-      (h ∘ eval ∘ (id ⊗₁ g)) ∘ ((eval ∘ ((id ⊗₁ f) ∘ (curry₂ ⊗₁ id))) ⊗₁ id)
-        ≈⟨ refl⟩∘⟨ ((refl⟩∘⟨ (⟺ whisker-comm)) ⟩⊗⟨refl) ⟩
-      (h ∘ eval ∘ (id ⊗₁ g)) ∘ ((eval ∘ ((curry₂ ⊗₁ id) ∘ (id ⊗₁ f))) ⊗₁ id)
-        ≈⟨ refl⟩∘⟨ (sym-assoc ⟩⊗⟨refl) ⟩
-      (h ∘ eval ∘ (id ⊗₁ g)) ∘ (((eval ∘ (curry₂ ⊗₁ id)) ∘ (id ⊗₁ f)) ⊗₁ id)
-        ≈⟨ refl⟩∘⟨ ((eval-curry ⟩∘⟨refl) ⟩⊗⟨refl) ⟩
-      (h ∘ eval ∘ (id ⊗₁ g)) ∘ ((curry (eval ∘ α⇒) ∘ (id ⊗₁ f)) ⊗₁ id)
-        ≈⟨ refl⟩∘⟨ split₁ˡ ⟩
-      (h ∘ eval ∘ (id ⊗₁ g)) ∘ (curry (eval ∘ α⇒) ⊗₁ id) ∘ ((id ⊗₁ f) ⊗₁ id)
-        ≈⟨ assoc ⟩
-      h ∘ (eval ∘ (id ⊗₁ g)) ∘ (curry (eval ∘ α⇒) ⊗₁ id) ∘ ((id ⊗₁ f) ⊗₁ id)
-        ≈⟨ refl⟩∘⟨ core ⟩
-      h ∘ eval ∘ (id ⊗₁ (f ⊗₁ g)) ∘ α⇒
-        ∎
-
--- Naturality of `uncurry₂` (the inverse square), by conjugating `curry₂-natural`.
-uncurry₂-natural : {f : X ⇒ A} {g : Y ⇒ B} {h : C ⇒ Z} →
-  [ f ⊗₁ g , h ]₁ ∘ uncurry₂ ≈ uncurry₂ ∘ [ f , [ g , h ]₁ ]₁
-uncurry₂-natural {f = f} {g = g} {h = h} = begin
-  [ f ⊗₁ g , h ]₁ ∘ uncurry₂
-    ≈˘⟨ cancelˡ curry₂-iso-uncurry₂ ⟩
-  uncurry₂ ∘ curry₂ ∘ [ f ⊗₁ g , h ]₁ ∘ uncurry₂
-    ≈˘⟨ refl⟩∘⟨ assoc ⟩
-  uncurry₂ ∘ (curry₂ ∘ [ f ⊗₁ g , h ]₁) ∘ uncurry₂
-    ≈˘⟨ refl⟩∘⟨ curry₂-natural ⟩∘⟨refl ⟩
-  uncurry₂ ∘ ([ f , [ g , h ]₁ ]₁ ∘ curry₂) ∘ uncurry₂
-    ≈⟨ refl⟩∘⟨ cancelʳ uncurry₂-iso-curry₂ ⟩
-  uncurry₂ ∘ [ f , [ g , h ]₁ ]₁
-    ∎
-
-------------------------------------------------------------------------
--- `curry₂-iso` as a natural isomorphism.  With `A`, `B`, `C` varying, both sides are
--- trifunctors on `𝒞ᵒᵖ × 𝒞ᵒᵖ × 𝒞`: `F⊗ = [ - ⊗₀ - , - ]₀` and `F² = [ - , [ - , - ]₀ ]₀`.
-
-private
-  𝒞ᵒᵖ = Category.op 𝒞
-
-  F⊗ : Functor (Product 𝒞ᵒᵖ (Product 𝒞ᵒᵖ 𝒞)) 𝒞
-  F⊗ = [-,-] ∘F ((Functor.op ⊗ ∘F (πˡ ※ (πˡ ∘F πʳ))) ※ (πʳ ∘F πʳ))
-
-  F² : Functor (Product 𝒞ᵒᵖ (Product 𝒞ᵒᵖ 𝒞)) 𝒞
-  F² = [-,-] ∘F (idF ⁂ [-,-])
-
-curry₂-NI : NaturalIsomorphism F⊗ F²
-curry₂-NI = record
-  { F⇒G = ntHelper record { η = λ _ → curry₂ ; commute = λ _ → ⟺ curry₂-natural }
-  ; F⇐G = ntHelper record { η = λ _ → uncurry₂ ; commute = λ _ → ⟺ uncurry₂-natural }
-  ; iso = λ _ → record { isoˡ = curry₂-iso-uncurry₂ ; isoʳ = uncurry₂-iso-curry₂ }
-  }
+abstract
+  internal-∘-unit-hom : unit-hom⇐ ∘ internal-∘ {Y} {Z} {unit} ∘ (id ⊗₁ unit-hom⇒) ≈ eval
+  internal-∘-unit-hom = begin
+    (eval ∘ ρ⇐) ∘ internal-∘ ∘ (id ⊗₁ unit-hom⇒)                    ≈⟨ center unitorʳ-commute-to ⟩
+    eval ∘ (((internal-∘ ⊗₁ id) ∘ ρ⇐) ∘ (id ⊗₁ unit-hom⇒))
+      ≈⟨ refl⟩∘⟨ pullʳ unitorʳ-commute-to ⟩
+    eval ∘ (internal-∘ ⊗₁ id) ∘ ((id ⊗₁ unit-hom⇒) ⊗₁ id) ∘ ρ⇐      ≈⟨ pullˡ eval-internal-∘ ⟩
+    (eval ∘ (id ⊗₁ eval) ∘ α⇒) ∘ ((id ⊗₁ unit-hom⇒) ⊗₁ id) ∘ ρ⇐   ≈⟨ assoc²βε ⟩
+    eval ∘ (id ⊗₁ eval) ∘ α⇒ ∘ ((id ⊗₁ unit-hom⇒) ⊗₁ id) ∘ ρ⇐
+      ≈⟨ refl⟩∘⟨ refl⟩∘⟨ extendʳ assoc-commute-from ⟩
+    eval ∘ (id ⊗₁ eval) ∘ (id ⊗₁ (unit-hom⇒ ⊗₁ id)) ∘ α⇒ ∘ ρ⇐     ≈⟨ refl⟩∘⟨ pullˡ merge₂ˡ ⟩
+    eval ∘ (id ⊗₁ (eval ∘ (unit-hom⇒ ⊗₁ id))) ∘ α⇒ ∘ ρ⇐           ≈⟨ refl⟩∘⟨ (refl⟩⊗⟨ eval-unit-hom⇒) ⟩∘⟨refl ⟩
+    eval ∘ (id ⊗₁ ρ⇒) ∘ α⇒ ∘ ρ⇐                                  ≈⟨ refl⟩∘⟨ pullˡ ρ⇒-α⇒ ⟩
+    eval ∘ ρ⇒ ∘ ρ⇐                                                ≈⟨ elimʳ unitorʳ.isoʳ ⟩
+    eval                                                          ∎

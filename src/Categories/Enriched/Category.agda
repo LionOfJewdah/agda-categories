@@ -2,7 +2,8 @@
 
 -- Enriched category over a Monoidal category V
 
-open import Categories.Category using (module Commutation) renaming (Category to Setoid-Category)
+open import Categories.Category using (module Commutation)
+  renaming (Category to Setoid-Category)
 open import Categories.Category.Monoidal using (Monoidal)
 
 module Categories.Enriched.Category {o ℓ e} {V : Setoid-Category o ℓ e}
@@ -59,21 +60,22 @@ record Category (v : Level) : Set (o ⊔ ℓ ⊔ e ⊔ suc v) where
   -- maps.  For examples, see Underlying.assoc below, or the modules
   -- Enriched.Functor and Enriched.NaturalTransformation.
 
-  ⊚-assoc-var : {X Y Z : ObjV} {A B C D : Obj}
-                {f : X ⇒ hom C D} {g : Y ⇒ hom B C} {h : Z ⇒ hom A B} →
-      [ (X ⊗₀ Y) ⊗₀ Z ⇒ hom A D ]⟨
-        (⊚ ∘ f ⊗₁ g) ⊗₁ h  ⇒⟨ hom B D ⊗₀ hom A B ⟩
-        ⊚
-      ≈ associator.from    ⇒⟨ X ⊗₀ (Y ⊗₀ Z) ⟩
-        f ⊗₁ (⊚ ∘ g ⊗₁ h)  ⇒⟨ hom C D ⊗₀ hom A C ⟩
-        ⊚
-      ⟩
-  ⊚-assoc-var {f = f} {g} {h} = begin
-    ⊚ ∘ (⊚ ∘ f ⊗₁ g) ⊗₁ h                 ≈⟨ refl⟩∘⟨ split₁ˡ ⟩
-    ⊚ ∘ ⊚ ⊗₁ idV ∘ (f ⊗₁ g) ⊗₁ h          ≈⟨ pullˡ ⊚-assoc ⟩
-    (⊚ ∘ idV ⊗₁ ⊚ ∘ α⇒) ∘ (f ⊗₁ g) ⊗₁ h   ≈⟨ pullʳ (pullʳ assoc-commute-from) ⟩
-    ⊚ ∘ idV ⊗₁ ⊚ ∘ f ⊗₁ (g ⊗₁ h) ∘ α⇒     ≈˘⟨ refl⟩∘⟨ pushˡ split₂ˡ ⟩
-    ⊚ ∘ f ⊗₁ (⊚ ∘ g ⊗₁ h) ∘ α⇒            ∎
+  abstract
+    ⊚-assoc-var : {X Y Z : ObjV} {A B C D : Obj}
+                  {f : X ⇒ hom C D} {g : Y ⇒ hom B C} {h : Z ⇒ hom A B} →
+        [ (X ⊗₀ Y) ⊗₀ Z ⇒ hom A D ]⟨
+          (⊚ ∘ f ⊗₁ g) ⊗₁ h  ⇒⟨ hom B D ⊗₀ hom A B ⟩
+          ⊚
+        ≈ associator.from    ⇒⟨ X ⊗₀ (Y ⊗₀ Z) ⟩
+          f ⊗₁ (⊚ ∘ g ⊗₁ h)  ⇒⟨ hom C D ⊗₀ hom A C ⟩
+          ⊚
+        ⟩
+    ⊚-assoc-var {f = f} {g} {h} = begin
+      ⊚ ∘ (⊚ ∘ f ⊗₁ g) ⊗₁ h                 ≈⟨ refl⟩∘⟨ split₁ˡ ⟩
+      ⊚ ∘ ⊚ ⊗₁ idV ∘ (f ⊗₁ g) ⊗₁ h          ≈⟨ pullˡ ⊚-assoc ⟩
+      (⊚ ∘ idV ⊗₁ ⊚ ∘ α⇒) ∘ (f ⊗₁ g) ⊗₁ h   ≈⟨ pullʳ (pullʳ assoc-commute-from) ⟩
+      ⊚ ∘ idV ⊗₁ ⊚ ∘ f ⊗₁ (g ⊗₁ h) ∘ α⇒     ≈˘⟨ refl⟩∘⟨ pushˡ split₂ˡ ⟩
+      ⊚ ∘ f ⊗₁ (⊚ ∘ g ⊗₁ h) ∘ α⇒            ∎
 
 -- The usual shorthand for hom-objects of an arbitrary category.
 

@@ -17,7 +17,7 @@ open import Categories.Enriched.Functor M using (Functor; UnderlyingFunctor; _�
   renaming (id to idF)
 open import Categories.Morphism.Reasoning V
   using (pushˡ; pullˡ; cancelʳ; pullʳ; pushʳ; switch-tofromˡ; extendˡ; extendʳ)
-open import Categories.NaturalTransformation using (ntHelper)
+open import Categories.NaturalTransformation using () renaming (ntHelper to ntHelper₀)
   renaming (NaturalTransformation to Setoid-NT)
 
 open Setoid-Category V using (_∘_; _⇒_; _≈_; assoc)
@@ -60,6 +60,29 @@ module _ {c d : Level} {C : Category c} {D : Category d} where
     infixl 16 _[_]
 
     _[_] = comp
+
+  record NTHelper (F G : Functor C D) : Set (ℓ ⊔ e ⊔ c) where
+    private
+      module F = Functor F using (₀; ₁)
+      module G = Functor G using (₀; ₁)
+
+    field
+      comp    : ∀ X → F.₀ X U.⇒ G.₀ X
+      commute : ∀ {X Y} →
+        [ C [ X , Y ] ⇒ D [ F.₀ X , G.₀ Y ] ]⟨
+          unitorˡ.to      ⇒⟨ unit ⊗₀ C [ X , Y ] ⟩
+          comp Y ⊗₁ F.₁   ⇒⟨ D [ F.₀ Y , G.₀ Y ] ⊗₀ D [ F.₀ X , F.₀ Y ] ⟩
+          D.⊚
+        ≈ unitorʳ.to      ⇒⟨ C [ X , Y ] ⊗₀ unit ⟩
+          G.₁ ⊗₁ comp X   ⇒⟨ D [ G.₀ X , G.₀ Y ] ⊗₀ D [ F.₀ X , G.₀ X ] ⟩
+          D.⊚
+        ⟩
+
+  ntHelper : {F G : Functor C D} → NTHelper F G → NaturalTransformation F G
+  ntHelper α = record
+    { comp = NTHelper.comp α
+    ; commute = NTHelper.commute α
+    }
 
   open NaturalTransformation
   open D hiding (id)
@@ -150,7 +173,7 @@ module _ {c d : Level} {C : Category c} {D : Category d} where
                  Setoid-NT {c} {ℓ} {e} {d} {ℓ} {e}
                      (UnderlyingFunctor {c} {d} {C} {D} F)
                      (UnderlyingFunctor {c} {d} {C} {D} G)
-  UnderlyingNT {F} {G} α = ntHelper (record
+  UnderlyingNT {F} {G} α = ntHelper₀ (record
     { η       = comp α
     ; commute = λ {X Y} f →
       begin

@@ -23,7 +23,7 @@ open Symmetric SM
 -- Shorthands for the braiding
 
 open BraidedProperties braided public using (module Shorthands)
-open BraidedProperties braided using (braiding-coherence-inv)
+open BraidedProperties braided using (braiding-coherence-inv; braiding-coherence-inv′)
   renaming (braiding-coherence′ to bc′)
 open Shorthands
 open Core.Shorthands using (idᵢ)
@@ -37,6 +37,14 @@ braiding-selfInverse = introʳ commutative ○ cancelˡ (braiding.iso.isoˡ _)
 
 inv-commutative : ∀ {X Y} → braiding.⇐.η (X , Y) ∘ braiding.⇐.η (Y , X) ≈ id
 inv-commutative = ∘-resp-≈ braiding-selfInverse braiding-selfInverse ○ commutative
+
+-- Braiding turns one inverse unitor into the other: the symmetric (σ⇒) form of
+-- `braiding-coherence-inv`/`braiding-coherence-inv′`.
+unitˡ-braiding : ∀ {X} → σ⇒ {unit} {X} ∘ λ⇐ ≈ ρ⇐
+unitˡ-braiding = (⟺ braiding-selfInverse ⟩∘⟨refl) ○ braiding-coherence-inv
+
+unitʳ-braiding : ∀ {X} → σ⇒ {X} {unit} ∘ ρ⇐ ≈ λ⇐
+unitʳ-braiding = (⟺ braiding-selfInverse ⟩∘⟨refl) ○ braiding-coherence-inv′
 
 mirrorˡ : ∀ {X Y Z} → (id {X} ⊗₁ σ⇒ {Z} {Y}) ∘ σ⇐ {X} {Z ⊗₀ Y} ≈ σ⇒ ∘ (σ⇒ ⊗₁ id)
 mirrorˡ = begin
@@ -98,6 +106,15 @@ module Rotation where
     where
       cycle-head = parallel σ⇒-comm id-comm-sym
       cycle-tail = parallel id-comm-sym σ⇒-comm
+
+  rotate-tail : α⇒ {X₁} {Y₁} {Z₁ ⊗₀ Z₂} ∘ α⇒ ∘
+      ((σ⇒ {Y₁} {X₁} ⊗₁ id {Z₁}) ⊗₁ id {Z₂})
+    ≈ α⇒ ∘ (σ⇒ ⊗₁ id) ∘ α⇒
+  rotate-tail = begin
+    α⇒ ∘ α⇒ ∘ ((σ⇒ ⊗₁ id) ⊗₁ id)  ≈⟨ refl⟩∘⟨ assoc-commute-from ⟩
+    α⇒ ∘ (σ⇒ ⊗₁ (id ⊗₁ id)) ∘ α⇒
+      ≈⟨ refl⟩∘⟨ (refl⟩⊗⟨ ⊗.identity) ⟩∘⟨refl ⟩
+    α⇒ ∘ (σ⇒ ⊗₁ id) ∘ α⇒             ∎
 
   cycle-cancel : cycle {Y₁} {X₁} {Z₁} ∘ (σ⇒ ⊗₁ id) ≈ (id ⊗₁ σ⇒) ∘ α⇒
   cycle-cancel = begin

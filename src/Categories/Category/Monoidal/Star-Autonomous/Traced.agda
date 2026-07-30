@@ -9,12 +9,11 @@ open import Categories.Category.Monoidal.Traced using (Traced)
 -- 28(7), 2013).  A traced ∗-autonomous category is a symmetric monoidal closed
 -- category with a trace on its symmetric monoidal structure and a dualizing
 -- object `⊥`.  Its unit map `t : unit ⇒ X ⊗₀ X *` is produced from the trace of
--- evaluation, and — after correcting by `t {unit} ⁻¹` — satisfies the two snake
--- equations, so the category is compact closed (`Closed/CompactClosed.agda`).
+-- evaluation and satisfies the two snake equations, so the category is compact
+-- closed (`Closed/CompactClosed.agda`).
 --
 -- This is the paper's §3, split across:
---   * `Traced/Base.agda`    — `τ` and its dinaturality (Lemma 3.1), the
---                             symmetric-closed isos, `δ`, `IsDualizing`;
+--   * `Traced/TraceExtraordinary.agda` — `τ` and extraordinary naturality (Lemma 3.1);
 --   * `Traced/Duality.agda` — the dualizing object, `φ` (Lemma 3.2), the unit
 --                             `t` (Corollary 3.4), Lemma 3.5, the hexagon.
 -- This file assembles them and hands `t` to `Closed/CompactClosed.agda`
@@ -28,11 +27,11 @@ open Category 𝒞 using (Obj)
 open Traced T using (symmetric)
 
 open import Categories.Category.Monoidal.CompactClosed M using (CompactClosed)
-open import Categories.Category.Monoidal.Star-Autonomous.Traced.Base Cl T public
-  using (IsDualizing)
 
 import Categories.Category.Monoidal.Closed.CompactClosed as ClosedCompactClosed
 import Categories.Category.Monoidal.Star-Autonomous.Traced.Duality as Duality
+
+open Duality Cl T public using (IsDualizing)
 
 module Dualized (⊥ : Obj) (dualizing : IsDualizing ⊥) where
 

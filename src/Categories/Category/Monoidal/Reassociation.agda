@@ -146,7 +146,7 @@ pentagon-collapse-inv = begin
 -- on the left, whiskered by `id` and wrapped in a further pair of associators,
 -- equals the same `f` conjugated by `α⇒ ∘ _ ∘ α⇐` on the right, under one `α⇒`.
 -- `f` is opaque — this is pure pentagon/associator gymnastics.
-α-conj-slide : {f : A ⊗₀ X ⇒ B ⊗₀ X} →
+α-conj-slide : {f : A ⊗₀ X ⇒ B ⊗₀ C} →
   α⇒ ∘ α⇒ ∘ ((α⇐ ∘ (id {Y} ⊗₁ f) ∘ α⇒) ⊗₁ id {Z}) ∘ α⇐
   ≈ (id ⊗₁ (α⇒ ∘ (f ⊗₁ id) ∘ α⇐)) ∘ α⇒
 α-conj-slide {f = f} = begin
