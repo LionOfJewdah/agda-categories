@@ -92,7 +92,7 @@ module _ (t : ∀ {X} → unit ⇒ X ⊗₀ X *)
     λ⇒ ∘ (id ⊗₁ internal-∘) ∘ α⇒ ∘ ((id ⊗₁ ⌜id⌝) ⊗₁ id) ∘ (ρ⇐ ⊗₁ id) ∘ λ⇐
       ≈⟨ refl⟩∘⟨ refl⟩∘⟨ extendʳ assoc-commute-from ⟩
     λ⇒ ∘ (id ⊗₁ internal-∘) ∘ (id ⊗₁ (⌜id⌝ ⊗₁ id)) ∘ α⇒ ∘ (ρ⇐ ⊗₁ id) ∘ λ⇐
-      ≈⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ pullˡ triangle-invʳ ⟩
+      ≈⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ pullˡ triangle-inv′ ⟩
     λ⇒ ∘ (id ⊗₁ internal-∘) ∘ (id ⊗₁ (⌜id⌝ ⊗₁ id)) ∘ (id ⊗₁ λ⇐) ∘ λ⇐
       ≈⟨ refl⟩∘⟨ pullˡ merge₂ˡ ⟩
     λ⇒ ∘ (id ⊗₁ (internal-∘ ∘ (⌜id⌝ ⊗₁ id))) ∘ (id ⊗₁ λ⇐) ∘ λ⇐
