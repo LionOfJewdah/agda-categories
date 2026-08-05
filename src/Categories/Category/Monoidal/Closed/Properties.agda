@@ -104,11 +104,6 @@ abstract
     (q ∘ eval) ∘ ([ p , id ]₁ ⊗₁ id)                   ≈⟨ pullʳ eval-comm-dom ⟩
     q ∘ eval ∘ (id ⊗₁ p)                               ∎
 
--- Evaluating a curried map after reindexing its argument.
-eval-curry-reindex : {p : A ⇒ B} {g : C ⊗₀ B ⇒ X} →
-  (eval ∘ (id ⊗₁ p)) ∘ (curry g ⊗₁ id) ≈ g ∘ (id ⊗₁ p)
-eval-curry-reindex = pullʳ (⟺ whisker-comm) ○ pullˡ eval-curry
-
 -- Hom action on a curried map is precomposition in the argument and
 -- postcomposition in the result.
 abstract
@@ -117,7 +112,8 @@ abstract
   hom-curry {p = p} {q = q} {g = g} = uncurry-injective (begin
     uncurry ([ p , q ]₁ ∘ curry g)                  ≈⟨ uncurry-∘ ⟩
     (eval ∘ ([ p , q ]₁ ⊗₁ id)) ∘ (curry g ⊗₁ id)  ≈⟨ eval-comm ⟩∘⟨refl ⟩
-    (q ∘ eval ∘ (id ⊗₁ p)) ∘ (curry g ⊗₁ id)       ≈⟨ pullʳ eval-curry-reindex ⟩
+    (q ∘ eval ∘ (id ⊗₁ p)) ∘ (curry g ⊗₁ id)       ≈⟨ pullʳ (pullʳ (⟺ whisker-comm)) ⟩
+    q ∘ eval ∘ (curry g ⊗₁ id) ∘ (id ⊗₁ p)         ≈⟨ refl⟩∘⟨ pullˡ eval-curry ⟩
     q ∘ g ∘ (id ⊗₁ p)                               ≈˘⟨ eval-curry ⟩
     uncurry (curry (q ∘ g ∘ (id ⊗₁ p)))            ∎)
 
@@ -168,21 +164,14 @@ eval-⌜⌝ = eval-curry
   curry (g ∘ f ∘ λ⇒)                          ≈⟨ curry-resp-≈ sym-assoc ⟩
   ⌜ g ∘ f ⌝                                   ∎
 
--- Evaluating a named map after reindexing its argument is ordinary composition.
-eval-⌜⌝-at : {f : B ⇒ C} {g : A ⇒ B} →
-  eval ∘ (⌜ f ⌝ ⊗₁ g) ≈ (f ∘ λ⇒) ∘ (id ⊗₁ g)
-eval-⌜⌝-at {f = f} {g} = begin
-  eval ∘ (⌜ f ⌝ ⊗₁ g)                ≈⟨ refl⟩∘⟨ serialize₁₂ ⟩
-  eval ∘ (⌜ f ⌝ ⊗₁ id) ∘ (id ⊗₁ g)  ≈⟨ pullˡ eval-⌜⌝ ⟩
-  (f ∘ λ⇒) ∘ (id ⊗₁ g)              ∎
-
 eval-⌜⌝-unit : {f : B ⇒ C} {g : A ⇒ B} →
   (eval ∘ (⌜ f ⌝ ⊗₁ g)) ∘ λ⇐ ≈ f ∘ g
 eval-⌜⌝-unit = begin
-  (eval ∘ (⌜ _ ⌝ ⊗₁ _)) ∘ λ⇐          ≈⟨ eval-⌜⌝-at ⟩∘⟨refl ⟩
-  (( _ ∘ λ⇒) ∘ (id ⊗₁ _)) ∘ λ⇐        ≈⟨ pullʳ (⟺ unitorˡ-commute-to) ⟩
-  (_ ∘ λ⇒) ∘ λ⇐ ∘ _                   ≈⟨ cancelInner unitorˡ.isoʳ ⟩
-  _ ∘ _                               ∎
+  (eval ∘ (⌜ _ ⌝ ⊗₁ _)) ∘ λ⇐                    ≈⟨ (refl⟩∘⟨ serialize₁₂) ⟩∘⟨refl ⟩
+  (eval ∘ (⌜ _ ⌝ ⊗₁ id) ∘ (id ⊗₁ _)) ∘ λ⇐      ≈⟨ (pullˡ eval-⌜⌝) ⟩∘⟨refl ⟩
+  ((_ ∘ λ⇒) ∘ (id ⊗₁ _)) ∘ λ⇐                  ≈⟨ pullʳ (⟺ unitorˡ-commute-to) ⟩
+  (_ ∘ λ⇒) ∘ λ⇐ ∘ _                             ≈⟨ cancelInner unitorˡ.isoʳ ⟩
+  _ ∘ _                                         ∎
 
 eval-⌜id⌝ : uncurry (⌜id⌝ {X}) ≈ λ⇒
 eval-⌜id⌝ = begin
@@ -458,18 +447,13 @@ unit-hom = record { from = unit-hom⇒ ; to = unit-hom⇐ ; iso = record { isoˡ
 -- The unit's own hom object, `[ unit , unit ]₀`, is the unit: `j` and `i⇐` are
 -- mutually inverse there.  (`i-isoʳ` already gives one half.)
 
-⌜id⌝≈unit-hom⇒ : ⌜id⌝ {unit} ≈ unit-hom⇒
-⌜id⌝≈unit-hom⇒ = uncurry-injective (begin
-  uncurry (⌜id⌝ {unit})             ≈⟨ eval-⌜id⌝ ⟩
-  λ⇒                                ≈⟨ coherence₃ ⟩
-  ρ⇒                                ≈˘⟨ eval-unit-hom⇒ ⟩
-  uncurry unit-hom⇒                 ∎)
-
 unit-hom⇐-⌜id⌝ : unit-hom⇐ ∘ ⌜id⌝ {unit} ≈ id
 unit-hom⇐-⌜id⌝ = begin
-  unit-hom⇐ ∘ ⌜id⌝        ≈⟨ refl⟩∘⟨ ⌜id⌝≈unit-hom⇒ ⟩
-  unit-hom⇐ ∘ unit-hom⇒   ≈⟨ unit-hom-isoˡ ⟩
-  id                      ∎
+  (eval ∘ ρ⇐) ∘ ⌜id⌝              ≈⟨ pullʳ unitorʳ-commute-to ⟩
+  eval ∘ (⌜id⌝ ⊗₁ id) ∘ ρ⇐        ≈⟨ pullˡ eval-⌜id⌝ ⟩
+  λ⇒ ∘ ρ⇐                          ≈⟨ coherence₃ ⟩∘⟨refl ⟩
+  ρ⇒ ∘ ρ⇐                          ≈⟨ unitorʳ.isoʳ ⟩
+  id                               ∎
 
 ------------------------------------------------------------------------
 -- Evaluation is composition with a value.  Read the argument as a map out of the

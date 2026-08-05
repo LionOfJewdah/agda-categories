@@ -80,12 +80,6 @@ A ⊗₁ˡ B = λ X → curry (ev⊗ˡ A B X)
 _⊗₁ʳ_ : (A X Y : Obj) → [ X , Y ]₀ ⇒ [ A ⊗₀ X , A ⊗₀ Y ]₀
 A ⊗₁ʳ X = λ Y → curry (ev⊗ʳ A X Y)
 
-tensorˡ-eval : (A B X : Obj) → uncurry ((A ⊗₁ˡ B) X) ≈ ev⊗ˡ A B X
-tensorˡ-eval A B X = eval-curry
-
-tensorʳ-eval : (A X Y : Obj) → uncurry ((A ⊗₁ʳ X) Y) ≈ ev⊗ʳ A X Y
-tensorʳ-eval A X Y = eval-curry
-
 tensorʳ-action : (A X Y : Obj) →
   Functor.₁ (A ⊗F-) {X = X} {Y = Y} ≈ (A ⊗₁ʳ X) Y
 tensorʳ-action A X Y = uncurry-injective (⊗F-eval ○ ⟺ eval-curry)

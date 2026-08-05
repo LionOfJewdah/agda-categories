@@ -274,7 +274,7 @@ private module Curry₂Naturality (C : Obj) where
     eval ∘ (id ⊗₁ (eval ⊗₁ id)) ∘ (id ⊗₁ α⇐) ∘ α⇒ ∘ (σ⇒ ⊗₁ id) ∘ α⇒
       ≈⟨ refl⟩∘⟨ pullˡ merge₂ˡ ⟩
     eval ∘ (id ⊗₁ ((eval ⊗₁ id) ∘ α⇐)) ∘ α⇒ ∘ (σ⇒ ⊗₁ id) ∘ α⇒
-      ≈˘⟨ refl⟩∘⟨ (refl⟩⊗⟨ tensorˡ-eval B A X) ⟩∘⟨refl ⟩
+      ≈˘⟨ refl⟩∘⟨ refl⟩⊗⟨ eval-curry ⟩∘⟨refl ⟩
     eval ∘ (id ⊗₁ uncurry ((B ⊗₁ˡ A) X)) ∘ α⇒ ∘ (σ⇒ ⊗₁ id) ∘ α⇒
       ≈⟨ reassoc-tail₅ ⟩
     (eval ∘ (id ⊗₁ uncurry ((B ⊗₁ˡ A) X)) ∘ α⇒ ∘ (σ⇒ ⊗₁ id)) ∘ α⇒ ∎
@@ -361,7 +361,7 @@ private module Curry₂Naturality (C : Obj) where
     (eval ∘ α⇒) ∘ (((id ⊗₁ eval) ∘ α⇒ ∘ (σ⇒ ⊗₁ id)) ∘ (α⇒ ⊗₁ id))
       ≈⟨ curry₂-rotate A X Y ⟩
     eval ∘ (id ⊗₁ ev⊗ʳ A Y X) ∘ α⇒ ∘ (σ⇒ ⊗₁ id) ∘ α⇒
-      ≈˘⟨ refl⟩∘⟨ (refl⟩⊗⟨ tensorʳ-eval A Y X) ⟩∘⟨refl ⟩
+      ≈˘⟨ refl⟩∘⟨ (refl⟩⊗⟨ eval-curry) ⟩∘⟨refl ⟩
     eval ∘ (id ⊗₁ uncurry ((A ⊗₁ʳ Y) X)) ∘ α⇒ ∘ (σ⇒ ⊗₁ id) ∘ α⇒
       ≈⟨ reassoc-tail₅ ⟩
     (eval ∘ (id ⊗₁ uncurry ((A ⊗₁ʳ Y) X)) ∘ α⇒ ∘ (σ⇒ ⊗₁ id)) ∘ α⇒ ∎

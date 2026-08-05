@@ -28,9 +28,6 @@ private
 ------------------------------------------------------------------------
 -- Iterated currying.
 
-eval₂ : ([ A , [ B , C ]₀ ]₀ ⊗₀ A) ⊗₀ B ⇒ C
-eval₂ = eval ∘ (eval ⊗₁ id)
-
 -- A function of a pair is a function returning a function.  The associators
 -- compare `(W ⊗₀ A) ⊗₀ B` with `W ⊗₀ (A ⊗₀ B)`.
 curry₂ : [ A ⊗₀ B , C ]₀ ⇒ [ A , [ B , C ]₀ ]₀
@@ -62,38 +59,6 @@ uncurry²-injective p = uncurry-injective (uncurry-injective p)
 uncurry²-∘ : {g : A ⇒ [ B , [ C , Z ]₀ ]₀} {f : W ⇒ A} →
   uncurry (uncurry (g ∘ f)) ≈ uncurry (uncurry g) ∘ ((f ⊗₁ id) ⊗₁ id)
 uncurry²-∘ = uncurry-resp-≈ uncurry-∘ ○ uncurry-∘
-
-eval²-comm-cod : (A : Obj) (f : X ⇒ [ B , C ]₀) →
-  (eval {B} {C} ∘ (eval {A} {[ B , C ]₀} ⊗₁ id {B}))
-    ∘ (([ id {A} , f ]₁ ⊗₁ id {A}) ⊗₁ id {B})
-  ≈ uncurry f ∘ (eval {A} {X} ⊗₁ id {B})
-eval²-comm-cod A f = begin
-  (eval ∘ (eval ⊗₁ id)) ∘ (([ id , f ]₁ ⊗₁ id) ⊗₁ id)
-    ≈⟨ pullʳ merge₁ʳ ⟩
-  eval ∘ (uncurry [ id , f ]₁ ⊗₁ id)
-    ≈⟨ uncurry-resp-≈ eval-comm-cod ⟩
-  eval ∘ ((f ∘ eval) ⊗₁ id)
-    ≈⟨ uncurry-∘ ⟩
-  uncurry f ∘ (eval ⊗₁ id) ∎
-
-abstract
-  uncurry₂-postcompose : (A : Obj) (f : X ⇒ [ B , C ]₀) →
-    uncurry (uncurry₂ ∘ [ id , f ]₁)
-    ≈ uncurry f ∘ (eval {A} {X} ⊗₁ id {B}) ∘ α⇐
-  uncurry₂-postcompose A f = begin
-    uncurry (uncurry₂ ∘ [ id , f ]₁)
-      ≈⟨ uncurry-∘ ⟩
-    uncurry uncurry₂ ∘ ([ id , f ]₁ ⊗₁ id)
-      ≈⟨ eval-curry ⟩∘⟨refl ⟩
-    (uncurry eval ∘ α⇐) ∘ ([ id , f ]₁ ⊗₁ id)
-      ≈⟨ assoc ⟩
-    uncurry eval ∘ α⇐ ∘ ([ id , f ]₁ ⊗₁ id)
-      ≈⟨ refl⟩∘⟨ refl⟩∘⟨ (refl⟩⊗⟨ ⟺ ⊗.identity) ⟩
-    uncurry eval ∘ α⇐ ∘ ([ id , f ]₁ ⊗₁ (id ⊗₁ id))
-      ≈⟨ refl⟩∘⟨ assoc-commute-to ⟩
-    uncurry eval ∘ (([ id , f ]₁ ⊗₁ id) ⊗₁ id) ∘ α⇐
-      ≈⟨ extendʳ (eval²-comm-cod A f) ⟩
-    uncurry f ∘ (eval ⊗₁ id) ∘ α⇐ ∎
 
 abstract
   uncurry₂-iso-curry₂ : curry₂ {A} {B} {C} ∘ uncurry₂ ≈ id
@@ -147,57 +112,31 @@ abstract
     (eval ∘ α⇒) ∘ ((f ⊗₁ id) ⊗₁ id)                     ≈⟨ extendˡ α⇒-⊗id-commute ⟩
     uncurry f ∘ α⇒                                       ∎
 
--- Beta laws for the two sides of iterated-currying naturality.
+-- Naturality of the iterated currying isomorphism.
 abstract
-  nested-hom-eval : {f : X ⇒ A} {g : Y ⇒ B} {h : C ⇒ Z} →
-    uncurry (uncurry ([ f , [ g , h ]₁ ]₁ ∘ curry₂))
-    ≈ h ∘ eval ∘ (id ⊗₁ (f ⊗₁ g)) ∘ α⇒
-  nested-hom-eval {f = f} {g} {h} = begin
+  curry₂-natural : {f : X ⇒ A} {g : Y ⇒ B} {h : C ⇒ Z} →
+    [ f , [ g , h ]₁ ]₁ ∘ curry₂ ≈ curry₂ ∘ [ f ⊗₁ g , h ]₁
+  curry₂-natural {f = f} {g} {h} = uncurry²-injective (begin
     uncurry (uncurry ([ f , [ g , h ]₁ ]₁ ∘ curry₂))
       ≈⟨ uncurry-resp-≈ (uncurry-resp-≈ hom-curry) ⟩
     uncurry (uncurry (curry ([ g , h ]₁ ∘ curry (eval ∘ α⇒) ∘ (id ⊗₁ f))))
       ≈⟨ uncurry-resp-≈ eval-curry ⟩
     uncurry ([ g , h ]₁ ∘ curry (eval ∘ α⇒) ∘ (id ⊗₁ f))
       ≈⟨ uncurry-resp-≈ (pullˡ hom-curry) ⟩
-    uncurry (curry (h ∘ (eval ∘ α⇒) ∘ (id ⊗₁ g)) ∘ (id ⊗₁ f))  ≈⟨ uncurry-∘ ⟩
+    uncurry (curry (h ∘ (eval ∘ α⇒) ∘ (id ⊗₁ g)) ∘ (id ⊗₁ f))
+      ≈⟨ uncurry-∘ ⟩
     uncurry (curry (h ∘ (eval ∘ α⇒) ∘ (id ⊗₁ g))) ∘ ((id ⊗₁ f) ⊗₁ id)
       ≈⟨ eval-curry ⟩∘⟨refl ⟩
     (h ∘ (eval ∘ α⇒) ∘ (id ⊗₁ g)) ∘ ((id ⊗₁ f) ⊗₁ id)  ≈⟨ assoc²βε ⟩
     h ∘ (eval ∘ α⇒) ∘ ((id ⊗₁ g) ∘ ((id ⊗₁ f) ⊗₁ id))
       ≈⟨ refl⟩∘⟨ refl⟩∘⟨ merge₂ˡ ⟩
     h ∘ (eval ∘ α⇒) ∘ ((id ⊗₁ f) ⊗₁ (g ∘ id))
-      ≈⟨ refl⟩∘⟨ refl⟩∘⟨ (refl⟩⊗⟨ identityʳ) ⟩
+      ≈⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩⊗⟨ identityʳ ⟩
     h ∘ (eval ∘ α⇒) ∘ ((id ⊗₁ f) ⊗₁ g)  ≈⟨ refl⟩∘⟨ pullʳ assoc-commute-from ⟩
-    h ∘ eval ∘ (id ⊗₁ (f ⊗₁ g)) ∘ α⇒    ∎
-
-  tensor-hom-eval : {f : X ⇒ A} {g : Y ⇒ B} {h : C ⇒ Z} →
-    uncurry (uncurry (curry₂ ∘ [ f ⊗₁ g , h ]₁))
-    ≈ h ∘ eval ∘ (id ⊗₁ (f ⊗₁ g)) ∘ α⇒
-  tensor-hom-eval = begin
-    uncurry (uncurry (curry₂ ∘ [ _ , _ ]₁))       ≈⟨ uncurry-resp-≈ uncurry-∘ ⟩
-    uncurry (uncurry curry₂ ∘ ([ _ , _ ]₁ ⊗₁ id))  ≈⟨ uncurry-∘ ⟩
-    uncurry (uncurry curry₂) ∘ (([ _ , _ ]₁ ⊗₁ id) ⊗₁ id)  ≈⟨ uncurry²-curry₂ ⟩∘⟨refl ⟩
-    (eval ∘ α⇒) ∘ (([ _ , _ ]₁ ⊗₁ id) ⊗₁ id)        ≈⟨ pullʳ α⇒-⊗id-commute ⟩
-    eval ∘ ([ _ , _ ]₁ ⊗₁ id) ∘ α⇒                  ≈⟨ pullˡ eval-comm ⟩
-    (_ ∘ eval ∘ (id ⊗₁ (_ ⊗₁ _))) ∘ α⇒               ≈⟨ assoc²βε ⟩
-    _ ∘ eval ∘ (id ⊗₁ (_ ⊗₁ _)) ∘ α⇒                 ∎
-
--- Naturality of the iterated currying isomorphism.
-curry₂-natural : {f : X ⇒ A} {g : Y ⇒ B} {h : C ⇒ Z} →
-  [ f , [ g , h ]₁ ]₁ ∘ curry₂ ≈ curry₂ ∘ [ f ⊗₁ g , h ]₁
-curry₂-natural = uncurry²-injective (nested-hom-eval ○ ⟺ tensor-hom-eval)
-
--- Naturality of the inverse currying map.
-abstract
-  uncurry₂-natural : {f : X ⇒ A} {g : Y ⇒ B} {h : C ⇒ Z} →
-    [ f ⊗₁ g , h ]₁ ∘ uncurry₂ ≈ uncurry₂ ∘ [ f , [ g , h ]₁ ]₁
-  uncurry₂-natural = begin
-    [ _ , _ ]₁ ∘ uncurry₂                         ≈˘⟨ cancelˡ curry₂-iso-uncurry₂ ⟩
-    uncurry₂ ∘ curry₂ ∘ [ _ , _ ]₁ ∘ uncurry₂     ≈˘⟨ refl⟩∘⟨ assoc ⟩
-    uncurry₂ ∘ (curry₂ ∘ [ _ , _ ]₁) ∘ uncurry₂   ≈˘⟨ refl⟩∘⟨ curry₂-natural ⟩∘⟨refl ⟩
-    uncurry₂ ∘ ([ _ , [ _ , _ ]₁ ]₁ ∘ curry₂) ∘ uncurry₂
-      ≈⟨ refl⟩∘⟨ cancelʳ uncurry₂-iso-curry₂ ⟩
-    uncurry₂ ∘ [ _ , [ _ , _ ]₁ ]₁                ∎
+    h ∘ eval ∘ (id ⊗₁ (f ⊗₁ g)) ∘ α⇒              ≈⟨ assoc²εβ ⟩
+    (h ∘ eval ∘ (id ⊗₁ (f ⊗₁ g))) ∘ α⇒            ≈˘⟨ eval-comm ⟩∘⟨refl ⟩
+    uncurry [ f ⊗₁ g , h ]₁ ∘ α⇒                         ≈˘⟨ uncurry²-curry₂-∘ ⟩
+    uncurry (uncurry (curry₂ ∘ [ f ⊗₁ g , h ]₁))             ∎)
 
 -- Iterated currying sends a name to the name of the curried map.
 abstract
