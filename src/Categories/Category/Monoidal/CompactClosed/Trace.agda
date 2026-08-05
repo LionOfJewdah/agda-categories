@@ -1,5 +1,11 @@
 {-# OPTIONS --without-K --safe #-}
 
+-- The trace of `f : A ⊗₀ X ⇒ B ⊗₀ X` in a compact closed category: bend the `X` leg
+-- around through a cup and a cap.  This file builds it, proves every JSV axiom, and
+-- shows it is the *unique* such operation (`pretrace-unique`) — from which `vanishing₂`
+-- falls out.  Joyal, Street & Verity (1996), §5; uniqueness after Hasegawa, MSCS 19(2)
+-- (2009), Appendix B.
+
 open import Categories.Category.Core using (Category)
 open import Categories.Category.Monoidal.Core using (Monoidal)
 open import Categories.Category.Monoidal.Symmetric using (Symmetric)
@@ -11,12 +17,6 @@ module Categories.Category.Monoidal.CompactClosed.Trace
     (M : Monoidal 𝒞)
     (K : CompactClosed M) where
 
--- The trace of `f : A ⊗₀ X ⇒ B ⊗₀ X` in a compact closed category: bend the `X` leg
--- around through a cup and a cap.  This file builds it, proves every JSV axiom, and
--- shows it is the *unique* such operation (`pretrace-unique`) — from which `vanishing₂`
--- falls out.  Joyal, Street & Verity (1996), §5; uniqueness after Hasegawa, MSCS 19(2)
--- (2009), Appendix B.
-
 open Category 𝒞
 open Monoidal M
 open CompactClosed K using (symmetric; leftRigid)
@@ -26,9 +26,9 @@ open import Categories.Category.Monoidal.Reasoning M
 open import Categories.Morphism.Reasoning 𝒞
 open import Categories.Category.Monoidal.Properties M
 open import Categories.Category.Monoidal.Braided.Properties (Symmetric.braided symmetric)
-  using (braiding-coherence-σ; braiding-coherence-σ′) renaming (module Shorthands to BraidShorthands)
-open import Categories.Category.Monoidal.Rigid.Dual M leftRigid
-  using (dual₁-cap; dual₁-cup)
+  using (braiding-coherence; braiding-coherence-σ; braiding-coherence-σ′)
+  renaming (module Shorthands to BraidShorthands)
+open import Categories.Category.Monoidal.Rigid.Dual M leftRigid using (dual₁-cap; dual₁-cup)
 open import Categories.Category.Monoidal.Reassociation M
 open import Categories.Category.Monoidal.CupCap M
 open import Categories.Category.Monoidal.Traced.PreTrace M using (PreTrace)
@@ -39,9 +39,6 @@ open BraidShorthands using (σ⇒; σ⇒-comm)
 private
   variable
     A B C W X Y Z : Obj
-
-  whisker-id : {f : X ⇒ X} → f ≈ id → id {A} ⊗₁ f ≈ id
-  whisker-id f≈id = (refl⟩⊗⟨ f≈id) ○ ⊗.identity
 
 -- Diagrams read bottom-to-top: inputs enter below and outputs leave above.  Duality
 -- bends a wire: `η` grows an `X`/`X ⁻¹` pair, while `ε` swallows one back.  `capᵗʳ`
@@ -93,14 +90,14 @@ trace : A ⊗₀ X ⇒ B ⊗₀ X → A ⇒ B
 trace f = capᵗʳ ∘ (f ⊗₁ id) ∘ cupᵗʳ
 
 trace-resp-≈ : {f g : A ⊗₀ X ⇒ B ⊗₀ X} → f ≈ g → trace f ≈ trace g
-trace-resp-≈ f≈g = refl⟩∘⟨ (f≈g ⟩⊗⟨refl) ⟩∘⟨refl
+trace-resp-≈ f≈g = refl⟩∘⟨ f≈g ⟩⊗⟨refl ⟩∘⟨refl
 
 private
   capᵗʳ-expand : capᵗʳ {B} {X} ≈ ρ⇒ ∘ (id ⊗₁ ε) ∘ (id ⊗₁ σ⇒) ∘ α⇒
   capᵗʳ-expand = begin
-    capᵗʳ                                     ≈˘⟨ cap-closeʳ-∘ ε ⟩∘⟨refl ⟩
-    (cap-closeʳ ε ∘ (id ⊗₁ σ⇒)) ∘ α⇒          ≈⟨ assoc²αε ⟩
-    ρ⇒ ∘ (id ⊗₁ ε) ∘ (id ⊗₁ σ⇒) ∘ α⇒ ∎
+    capᵗʳ                             ≈˘⟨ cap-closeʳ-∘ ε ⟩∘⟨refl ⟩
+    (cap-closeʳ ε ∘ (id ⊗₁ σ⇒)) ∘ α⇒  ≈⟨ assoc²αε ⟩
+    ρ⇒ ∘ (id ⊗₁ ε) ∘ (id ⊗₁ σ⇒) ∘ α⇒  ∎
 
   trace⟨_⟩ : {f g : A ⊗₀ X ⇒ B ⊗₀ X} → f ≈ g → trace f ≈ trace g
   trace⟨_⟩ = trace-resp-≈
@@ -116,39 +113,33 @@ private
   cupᵗʳ-slide : {g : X ⇒ Y} →
     ((id {A} ⊗₁ g) ⊗₁ id) ∘ cupᵗʳ ≈ (id ⊗₁ dual₁ g) ∘ cupᵗʳ
   cupᵗʳ-slide {g = g} = begin
-    ((id ⊗₁ g) ⊗₁ id) ∘ cupᵗʳ                    ≈⟨ cup-bendʳ-⊗ η ⟩
-    cup-bendʳ ((g ⊗₁ id) ∘ η)                    ≈⟨ cup-bendʳ-resp (⟺ dual₁-cup) ⟩
-    cup-bendʳ ((id ⊗₁ dual₁ g) ∘ η)              ≈˘⟨ cup-bendʳ-⊗ η ⟩
-    ((id ⊗₁ id) ⊗₁ dual₁ g) ∘ cupᵗʳ              ≈⟨ (⊗.identity ⟩⊗⟨refl) ⟩∘⟨refl ⟩
-    (id ⊗₁ dual₁ g) ∘ cupᵗʳ                      ∎
+    ((id ⊗₁ g) ⊗₁ id) ∘ cupᵗʳ         ≈⟨ cup-bendʳ-⊗ η ⟩
+    cup-bendʳ ((g ⊗₁ id) ∘ η)         ≈⟨ cup-bendʳ-resp (⟺ dual₁-cup) ⟩
+    cup-bendʳ ((id ⊗₁ dual₁ g) ∘ η)   ≈˘⟨ cup-bendʳ-⊗ η ⟩
+    ((id ⊗₁ id) ⊗₁ dual₁ g) ∘ cupᵗʳ   ≈⟨ ⊗.identity ⟩⊗⟨refl ⟩∘⟨refl ⟩
+    (id ⊗₁ dual₁ g) ∘ cupᵗʳ           ∎
 
   -- Evaluation after swapping is natural in the wire being evaluated.
   capʳ-natural : {g : X ⇒ Y} →
     capʳ {X} ∘ (id ⊗₁ dual₁ g) ≈ capʳ {Y} ∘ (g ⊗₁ id)
-  capʳ-natural {g = g} = begin
-    (ε ∘ σ⇒) ∘ (id ⊗₁ dual₁ g)  ≈⟨ pullʳ σ⇒-comm ⟩
-    ε ∘ ((dual₁ g ⊗₁ id) ∘ σ⇒)  ≈⟨ extendʳ dual₁-cap ⟩
-    ε ∘ ((id ⊗₁ g) ∘ σ⇒)        ≈˘⟨ pullʳ σ⇒-comm ⟩
-    (ε ∘ σ⇒) ∘ (g ⊗₁ id)        ∎
+  capʳ-natural {g = g} = glue dual₁-cap σ⇒-comm ○ ⟺ (pullʳ σ⇒-comm)
 
   capᵗʳ-slide : {g : X ⇒ Y} →
     capᵗʳ ∘ (id {B ⊗₀ X} ⊗₁ dual₁ g) ≈ capᵗʳ ∘ ((id ⊗₁ g) ⊗₁ id)
   capᵗʳ-slide {g = g} = begin
-    capᵗʳ ∘ (id ⊗₁ dual₁ g)                    ≈˘⟨ refl⟩∘⟨ (⊗.identity ⟩⊗⟨refl) ⟩
-    capᵗʳ ∘ ((id ⊗₁ id) ⊗₁ dual₁ g)            ≈⟨ cap-bendʳ-⊗ capʳ ⟩
-    cap-bendʳ (capʳ ∘ (id ⊗₁ dual₁ g))          ≈⟨ cap-bendʳ-resp capʳ-natural ⟩
-    cap-bendʳ (capʳ ∘ (g ⊗₁ id))                ≈˘⟨ cap-bendʳ-⊗ capʳ ⟩
-    capᵗʳ ∘ ((id ⊗₁ g) ⊗₁ id)                  ∎
+    capᵗʳ ∘ (id ⊗₁ dual₁ g)             ≈˘⟨ refl⟩∘⟨ ⊗.identity ⟩⊗⟨refl ⟩
+    capᵗʳ ∘ ((id ⊗₁ id) ⊗₁ dual₁ g)     ≈⟨ cap-bendʳ-⊗ capʳ ⟩
+    cap-bendʳ (capʳ ∘ (id ⊗₁ dual₁ g))  ≈⟨ cap-bendʳ-resp capʳ-natural ⟩
+    cap-bendʳ (capʳ ∘ (g ⊗₁ id))        ≈˘⟨ cap-bendʳ-⊗ capʳ ⟩
+    capᵗʳ ∘ ((id ⊗₁ g) ⊗₁ id)           ∎
 
 trace-slide : {f : A ⊗₀ Y ⇒ B ⊗₀ X} {g : X ⇒ Y} →
   trace (f ∘ id ⊗₁ g) ≈ trace (id ⊗₁ g ∘ f)
 trace-slide {f = f} {g} = begin
-  trace (f ∘ id ⊗₁ g)                                   ≈⟨ refl⟩∘⟨ split₁ʳ ⟩∘⟨refl ⟩
-  capᵗʳ ∘ (((f ⊗₁ id) ∘ ((id ⊗₁ g) ⊗₁ id)) ∘ cupᵗʳ)     ≈⟨ refl⟩∘⟨ pullʳ cupᵗʳ-slide ⟩
-  capᵗʳ ∘ ((f ⊗₁ id) ∘ ((id ⊗₁ dual₁ g) ∘ cupᵗʳ))       ≈⟨ refl⟩∘⟨ extendʳ whisker-comm ⟩
-  capᵗʳ ∘ ((id ⊗₁ dual₁ g) ∘ ((f ⊗₁ id) ∘ cupᵗʳ))       ≈⟨ pullˡ capᵗʳ-slide ⟩
-  (capᵗʳ ∘ ((id ⊗₁ g) ⊗₁ id)) ∘ ((f ⊗₁ id) ∘ cupᵗʳ)     ≈⟨ center merge₁ʳ ⟩
-  trace (id ⊗₁ g ∘ f)                                   ∎
+  trace (f ∘ id ⊗₁ g)                                 ≈⟨ refl⟩∘⟨ split₁ʳ ⟩∘⟨refl ⟩
+  capᵗʳ ∘ (((f ⊗₁ id) ∘ ((id ⊗₁ g) ⊗₁ id)) ∘ cupᵗʳ)   ≈⟨ refl⟩∘⟨ glue whisker-comm cupᵗʳ-slide ⟩
+  capᵗʳ ∘ ((id ⊗₁ dual₁ g) ∘ ((f ⊗₁ id) ∘ cupᵗʳ))     ≈⟨ pullˡ capᵗʳ-slide ○ center merge₁ʳ ⟩
+  trace (id ⊗₁ g ∘ f)                                 ∎
 
 tightenₗ : {f : B ⇒ C} {g : A ⊗₀ X ⇒ B ⊗₀ X} → trace (f ⊗₁ id ∘ g) ≈ f ∘ trace g
 tightenₗ {f = f} {g} = begin
@@ -188,9 +179,8 @@ private
 
   -- Braiding `X` past `Y`, then past `Z`, is braiding it past `Y ⊗₀ Z` in one go.
   -- `yanking` reads this forwards to collapse its loop; `φ-fuse` reads it backwards.
-  braid-loop-collapse :
-      (id {Y} ⊗₁ σ⇒ {X} {Z}) ∘ α⇒ ∘ (σ⇒ {X} {Y} ⊗₁ id) ∘ α⇐
-      ≈ α⇒ ∘ σ⇒
+  braid-loop-collapse : (id {Y} ⊗₁ σ⇒ {X} {Z}) ∘ α⇒ ∘ (σ⇒ {X} {Y} ⊗₁ id) ∘ α⇐
+                        ≈ α⇒ ∘ σ⇒
   braid-loop-collapse = begin
     (id ⊗₁ σ⇒) ∘ α⇒ ∘ (σ⇒ ⊗₁ id) ∘ α⇐       ≈⟨ assoc²εβ ⟩
     ((id ⊗₁ σ⇒) ∘ (α⇒ ∘ (σ⇒ ⊗₁ id))) ∘ α⇐   ≈⟨ hexagon₁ ⟩∘⟨refl ⟩
@@ -199,17 +189,18 @@ private
 
 yanking : trace (σ⇒ {X} {X}) ≈ id
 yanking = begin
-  trace (σ⇒)                                              ≈⟨ trace-expand ⟩
+  trace (σ⇒)
+    ≈⟨ trace-expand ⟩
   ρ⇒ ∘ (id ⊗₁ ε) ∘ (id ⊗₁ σ⇒) ∘ α⇒ ∘ (σ⇒ ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ η) ∘ ρ⇐
     ≈⟨ refl⟩∘⟨ refl⟩∘⟨ reassoc-tail₅ ⟩
   ρ⇒ ∘ (id ⊗₁ ε) ∘ (((id ⊗₁ σ⇒) ∘ α⇒ ∘ (σ⇒ ⊗₁ id) ∘ α⇐) ∘ (id ⊗₁ η) ∘ ρ⇐)
     ≈⟨ refl⟩∘⟨ refl⟩∘⟨ braid-loop-collapse ⟩∘⟨refl ⟩
   ρ⇒ ∘ (id ⊗₁ ε) ∘ ((α⇒ ∘ σ⇒) ∘ (id ⊗₁ η) ∘ ρ⇐)
-    ≈⟨ refl⟩∘⟨ refl⟩∘⟨ pullʳ (pullˡ (braiding.⇒.commute _)) ⟩
+    ≈⟨ refl⟩∘⟨ refl⟩∘⟨ center (braiding.⇒.commute _) ⟩
   ρ⇒ ∘ (id ⊗₁ ε) ∘ α⇒ ∘ ((η ⊗₁ id) ∘ σ⇒) ∘ ρ⇐
     ≈⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ cup-σ-unit ⟩
-  ρ⇒ ∘ (id ⊗₁ ε) ∘ α⇒ ∘ (η ⊗₁ id) ∘ λ⇐                            ≈⟨ snake₁ ⟩
-  id                                                             ∎
+  ρ⇒ ∘ (id ⊗₁ ε) ∘ α⇒ ∘ (η ⊗₁ id) ∘ λ⇐                          ≈⟨ snake₁ ⟩
+  id                                                            ∎
 
 -- Vanishing₁: the tensor unit has trivial trace dimension.
 --
@@ -232,8 +223,7 @@ private
     ε ∘ (λ⇒ ∘ α⇒ ∘ ρ⇐) ∘ η                  ≈⟨ refl⟩∘⟨ pullʳ (pullʳ unitorʳ-commute-to) ⟩
     ε ∘ λ⇒ ∘ α⇒ ∘ (η ⊗₁ id) ∘ ρ⇐            ≈˘⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ coherence-inv₃ ⟩
     ε ∘ λ⇒ ∘ α⇒ ∘ (η ⊗₁ id) ∘ λ⇐            ≈⟨ pullˡ (⟺ unitorˡ-commute-from) ⟩
-    (λ⇒ ∘ (id ⊗₁ ε)) ∘ α⇒ ∘ (η ⊗₁ id) ∘ λ⇐  ≈⟨ (coherence₃ ⟩∘⟨refl) ⟩∘⟨refl ⟩
-    (ρ⇒ ∘ (id ⊗₁ ε)) ∘ α⇒ ∘ (η ⊗₁ id) ∘ λ⇐  ≈⟨ assoc ⟩
+    (λ⇒ ∘ (id ⊗₁ ε)) ∘ α⇒ ∘ (η ⊗₁ id) ∘ λ⇐  ≈⟨ pushˡ (coherence₃ ⟩∘⟨refl) ⟩
     ρ⇒ ∘ (id ⊗₁ ε) ∘ α⇒ ∘ (η ⊗₁ id) ∘ λ⇐    ≈⟨ snake₁ ⟩
     id                                      ∎
 
@@ -253,19 +243,17 @@ private
   -- The loop straightens out, leaving the cup running into the cap.
   trace-unit-id : trace (id {A} ⊗₁ id {unit}) ≈ id
   trace-unit-id = begin
-    trace (id ⊗₁ id)                                        ≈⟨ trace⟨ ⊗.identity ⟩ ⟩
-    trace id                                                ≈⟨ elim-center ⊗.identity ⟩
-    capᵗʳ ∘ cupᵗʳ                                          ≈⟨ cancelInner associator.isoʳ ⟩
-    cap-closeʳ capʳ ∘ cup-openʳ η                            ≈⟨ pullˡ (cap-closeʳ-∘ capʳ) ⟩
-    cap-closeʳ (capʳ ∘ η) ∘ ρ⇐                              ≈⟨ cap-closeʳ-resp assoc ⟩∘⟨refl ⟩
-    cap-closeʳ (ε ∘ σ⇒ ∘ η) ∘ ρ⇐                            ≈⟨ cap-closeʳ-resp unit-dimension ⟩∘⟨refl ⟩
-    cap-closeʳ id ∘ ρ⇐                                      ≈⟨ elimʳ ⊗.identity ⟩∘⟨refl ⟩
-    ρ⇒ ∘ ρ⇐                                                 ≈⟨ unitorʳ.isoʳ ⟩
-    id                                                      ∎
+    trace (id ⊗₁ id)                ≈⟨ trace⟨ ⊗.identity ⟩ ○ elim-center ⊗.identity ⟩
+    capᵗʳ ∘ cupᵗʳ                   ≈⟨ cancelInner associator.isoʳ ⟩
+    cap-closeʳ capʳ ∘ cup-openʳ η   ≈⟨ pullˡ (cap-closeʳ-∘ capʳ) ⟩
+    cap-closeʳ (capʳ ∘ η) ∘ ρ⇐      ≈⟨ cap-closeʳ-resp (assoc ○ unit-dimension) ⟩∘⟨refl ⟩
+    cap-closeʳ id ∘ ρ⇐              ≈⟨ elimʳ ⊗.identity ⟩∘⟨refl ⟩
+    ρ⇒ ∘ ρ⇐                         ≈⟨ unitorʳ.isoʳ ⟩
+    id                              ∎
 
 vanishing₁ : {f : A ⇒ B} → trace (f ⊗₁ id {unit}) ≈ f
 vanishing₁ {f = f} = begin
-  trace (f ⊗₁ id)                   ≈˘⟨ trace⟨ elimʳ ⊗.identity ⟩ ⟩
+  trace (f ⊗₁ id)                   ≈⟨ trace⟨ introʳ ⊗.identity ⟩ ⟩
   trace ((f ⊗₁ id) ∘ (id ⊗₁ id))    ≈⟨ tightenₗ ⟩
   f ∘ trace (id ⊗₁ id)              ≈⟨ elimʳ trace-unit-id ⟩
   f                                 ∎
@@ -335,16 +323,12 @@ module HasegawaTraceUniqueness where
   -- names it once, in prefix form; every other wire follows from the equation.
 
   ⟦⟧-resp-≈ : {h k : X ⊗₀ Y ⇒ A ⊗₀ B} → h ≈ k → │⟦_⟧ {Z} h ≈ │⟦ k ⟧
-  ⟦⟧-resp-≈ h≈k = refl⟩∘⟨ (refl⟩⊗⟨ h≈k) ⟩∘⟨refl
+  ⟦⟧-resp-≈ h≈k = refl⟩∘⟨ refl⟩⊗⟨ h≈k ⟩∘⟨refl
 
   -- Functoriality.  The re-bracketing in the middle cancels.
   ⟦⟧-∘ : {h : A ⊗₀ B ⇒ C ⊗₀ W} {k : X ⊗₀ Y ⇒ A ⊗₀ B} →
     │⟦_⟧ {Z} h ∘ │⟦ k ⟧ ≈ │⟦ h ∘ k ⟧
-  ⟦⟧-∘ {h = h} {k = k} = begin
-    (α⇐ ∘ (id ⊗₁ h) ∘ α⇒) ∘ (α⇐ ∘ (id ⊗₁ k) ∘ α⇒)
-      ≈⟨ center (cancelʳ associator.isoʳ) ⟩
-    α⇐ ∘ (id ⊗₁ h) ∘ (id ⊗₁ k) ∘ α⇒                ≈⟨ refl⟩∘⟨ pullˡ merge₂ˡ ⟩
-    α⇐ ∘ (id ⊗₁ (h ∘ k)) ∘ α⇒                      ∎
+  ⟦⟧-∘ = center (cancelʳ associator.isoʳ) ○ pull-center merge₂ˡ
 
   ⟦⟧-factor : {h : A ⊗₀ B ⇒ C ⊗₀ W} {k : X ⊗₀ Y ⇒ A ⊗₀ B}
     {h′ : (Z ⊗₀ A) ⊗₀ B ⇒ (Z ⊗₀ C) ⊗₀ W} →
@@ -379,18 +363,13 @@ module HasegawaTraceUniqueness where
   φ = │⟦ σ⇒ ⟧
 
   φ-inv : φ ∘ φ ≈ id {(Z ⊗₀ X) ⊗₀ Y}
-  φ-inv = begin
-    │⟦ σ⇒ ⟧ ∘ │⟦ σ⇒ ⟧  ≈⟨ ⟦⟧-∘ ⟩
-    │⟦ σ⇒ ∘ σ⇒ ⟧       ≈⟨ ⟦⟧-resp-≈ commutative ⟩
-    │⟦ id ⟧            ≈⟨ ⟦⟧-id ⟩
-    id                 ∎
+  φ-inv = ⟦⟧-∘ ○ (⟦⟧-resp-≈ commutative) ○ ⟦⟧-id
 
   -- `φ` is natural in the wire the braiding drags along.
   φ-natural : {c : X ⇒ Y} → φ {Z} {B} ∘ (id ⊗₁ c) ≈ ((id ⊗₁ c) ⊗₁ id) ∘ φ
   φ-natural {c = c} = begin
     φ ∘ (id ⊗₁ c)           ≈˘⟨ refl⟩∘⟨ ⟦⟧-id⊗ ⟩
-    │⟦ σ⇒ ⟧ ∘ │⟦ id ⊗₁ c ⟧  ≈⟨ ⟦⟧-∘ ⟩
-    │⟦ σ⇒ ∘ (id ⊗₁ c) ⟧     ≈⟨ ⟦⟧-resp-≈ σ⇒-comm ⟩
+    │⟦ σ⇒ ⟧ ∘ │⟦ id ⊗₁ c ⟧  ≈⟨ ⟦⟧-∘ ○ ⟦⟧-resp-≈ σ⇒-comm ⟩
     │⟦ (c ⊗₁ id) ∘ σ⇒ ⟧     ≈⟨ ⟦⟧-factor ⟦⟧-⊗id ⟩
     ((id ⊗₁ c) ⊗₁ id) ∘ φ   ∎
 
@@ -402,7 +381,7 @@ module HasegawaTraceUniqueness where
   φ-fuse : φ ∘ α⇒ {Z ⊗₀ X} {Y} {B} ≈ (α⇒ ⊗₁ id) ∘ φ ∘ (φ ⊗₁ id)
   φ-fuse = begin
     │⟦ σ⇒ ⟧ ∘ α⇒
-      ≈˘⟨ ⟦⟧-resp-≈ (cancelˡ associator.isoˡ) ⟩∘⟨refl ⟩
+      ≈⟨ ⟦⟧-resp-≈ (insertˡ associator.isoˡ) ⟩∘⟨refl ⟩
     │⟦ α⇐ ∘ α⇒ ∘ σ⇒ ⟧ ∘ α⇒
       ≈˘⟨ ⟦⟧-resp-≈ (refl⟩∘⟨ braid-loop-collapse) ⟩∘⟨refl ⟩
     │⟦ α⇐ ∘ (id ⊗₁ σ⇒) ∘ α⇒ ∘ (σ⇒ ⊗₁ id) ∘ α⇐ ⟧ ∘ α⇒
@@ -412,17 +391,15 @@ module HasegawaTraceUniqueness where
     ((α⇒ ⊗₁ id) ∘ α⇐) ∘ (id ⊗₁ σ⇒) ∘ │⟦ α⇒ ∘ (σ⇒ ⊗₁ id) ∘ α⇐ ⟧ ∘ α⇒
       ≈⟨ refl⟩∘⟨ refl⟩∘⟨ pushˡ (⟦⟧-factor (⟺ assoc-from-coherence)) ⟩
     ((α⇒ ⊗₁ id) ∘ α⇐) ∘ (id ⊗₁ σ⇒) ∘ (α⇒ ∘ (α⇐ ⊗₁ id)) ∘ │⟦ (σ⇒ ⊗₁ id) ∘ α⇐ ⟧ ∘ α⇒
-      ≈⟨ assoc ⟩
-    (α⇒ ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ σ⇒) ∘ (α⇒ ∘ (α⇐ ⊗₁ id)) ∘ │⟦ (σ⇒ ⊗₁ id) ∘ α⇐ ⟧ ∘ α⇒
-      ≈⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ assoc ⟩
+      ≈⟨ pullʳ (refl⟩∘⟨ refl⟩∘⟨ assoc) ⟩
     (α⇒ ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ σ⇒) ∘ α⇒ ∘ (α⇐ ⊗₁ id) ∘ │⟦ (σ⇒ ⊗₁ id) ∘ α⇐ ⟧ ∘ α⇒
-      ≈˘⟨ refl⟩∘⟨ assoc²βε ⟩
+      ≈⟨ refl⟩∘⟨ assoc²εβ ⟩
     (α⇒ ⊗₁ id) ∘ φ ∘ (α⇐ ⊗₁ id) ∘ │⟦ (σ⇒ ⊗₁ id) ∘ α⇐ ⟧ ∘ α⇒
       ≈⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ pushˡ (⟦⟧-factor ⟦⟧-⊗id) ⟩
     (α⇒ ⊗₁ id) ∘ φ ∘ (α⇐ ⊗₁ id) ∘ ((id ⊗₁ σ⇒) ⊗₁ id) ∘ │⟦ α⇐ ⟧ ∘ α⇒
       ≈⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩∘⟨ ⟦⟧-α⇐-cancel ⟩
     (α⇒ ⊗₁ id) ∘ φ ∘ (α⇐ ⊗₁ id) ∘ ((id ⊗₁ σ⇒) ⊗₁ id) ∘ (α⇒ ⊗₁ id)
-      ≈˘⟨ refl⟩∘⟨ refl⟩∘⟨ split₁³ ⟩
+      ≈⟨ refl⟩∘⟨ refl⟩∘⟨ merge₁³ ⟩
     (α⇒ ⊗₁ id) ∘ φ ∘ (φ ⊗₁ id)                                                  ∎
 
   ----------------------------------------------------------------------------
@@ -434,25 +411,25 @@ module HasegawaTraceUniqueness where
 
   capᵗʳ-φ : capᵗʳ {B} {X} ∘ φ ≈ ev
   capᵗʳ-φ = begin
-    capᵗʳ ∘ φ                                   ≈⟨ pullʳ (cancelˡ associator.isoʳ) ⟩
-    cap-closeʳ capʳ ∘ (id ⊗₁ σ⇒) ∘ α⇒          ≈⟨ pullˡ (cap-closeʳ-∘ capʳ) ⟩
-    cap-bendʳ (capʳ ∘ σ⇒)                      ≈⟨ cap-bendʳ-resp (cancelʳ commutative) ⟩
-    ev                                         ∎
+    capᵗʳ ∘ φ                           ≈⟨ pullʳ (cancelˡ associator.isoʳ) ⟩
+    cap-closeʳ capʳ ∘ (id ⊗₁ σ⇒) ∘ α⇒   ≈⟨ pullˡ (cap-closeʳ-∘ capʳ) ⟩
+    cap-bendʳ (capʳ ∘ σ⇒)               ≈⟨ cap-bendʳ-resp (cancelʳ commutative) ⟩
+    ev                                  ∎
 
   -- The cup, met by `ev`, is the snake: the cup plants an `X`/`X ⁻¹` pair, `ε`
   -- closes the `X ⁻¹` against the incoming wire, and the wire is left alone.  The
   -- spectator `A` never meets either bend.
   ev-cupᵗʳ : ev {A ⊗₀ X} {X} ∘ (cupᵗʳ ⊗₁ id) ≈ id
   ev-cupᵗʳ = begin
-    ev ∘ (cupᵗʳ ⊗₁ id)                                           ≈⟨ refl⟩∘⟨ split₁ˡ ⟩
+    ev ∘ (cupᵗʳ ⊗₁ id)                                            ≈⟨ refl⟩∘⟨ split₁ˡ ⟩
     ev ∘ (α⇐ ⊗₁ id) ∘ (cup-openʳ η ⊗₁ id)                         ≈⟨ assoc ⟩
-    cap-closeʳ ε ∘ α⇒ ∘ (α⇐ ⊗₁ id) ∘ (cup-openʳ η ⊗₁ id)          ≈⟨ refl⟩∘⟨ pullˡ assoc-from-coherence ⟩
+    cap-closeʳ ε ∘ α⇒ ∘ (α⇐ ⊗₁ id) ∘ (cup-openʳ η ⊗₁ id)          ≈⟨ pull-center assoc-from-coherence ⟩
     cap-closeʳ ε ∘ (α⇐ ∘ (id ⊗₁ α⇒) ∘ α⇒) ∘ (cup-openʳ η ⊗₁ id)   ≈⟨ refl⟩∘⟨ assoc²βε ⟩
     cap-closeʳ ε ∘ α⇐ ∘ (id ⊗₁ α⇒) ∘ α⇒ ∘ (cup-openʳ η ⊗₁ id)     ≈⟨ pullˡ cap-closeʳ-natural ⟩
     (id ⊗₁ cap-closeʳ ε) ∘ (id ⊗₁ α⇒) ∘ α⇒ ∘ (cup-openʳ η ⊗₁ id)  ≈⟨ refl⟩∘⟨ refl⟩∘⟨ cup-openʳ-whisker ⟩
     (id ⊗₁ cap-closeʳ ε) ∘ (id ⊗₁ α⇒) ∘ (id ⊗₁ cup-openˡ η)       ≈⟨ merge₂³ ⟩
     id ⊗₁ (cap-closeʳ ε ∘ α⇒ ∘ cup-openˡ η)                       ≈⟨ refl⟩⊗⟨ assoc ⟩
-    id ⊗₁ (ρ⇒ ∘ (id ⊗₁ ε) ∘ α⇒ ∘ (η ⊗₁ id) ∘ λ⇐)                  ≈⟨ whisker-id snake₁ ⟩
+    id ⊗₁ (ρ⇒ ∘ (id ⊗₁ ε) ∘ α⇒ ∘ (η ⊗₁ id) ∘ λ⇐)                  ≈⟨ ⊗-identityʳ snake₁ ⟩
     id                                                            ∎
 
   ----------------------------------------------------------------------------
@@ -484,24 +461,21 @@ module HasegawaTraceUniqueness where
   -- it was: the unitors' own coherence, with the spectator watching.
   ρ-φ : (ρ⇒ {B} ⊗₁ id {X}) ∘ φ ≈ ρ⇒
   ρ-φ = begin
-    (ρ⇒ ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ σ⇒) ∘ α⇒               ≈⟨ refl⟩∘⟨ refl⟩∘⟨ refl⟩⊗⟨ braiding-coherence-σ ⟩∘⟨refl ⟩
-    (ρ⇒ ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ (λ⇐ ∘ ρ⇒)) ∘ α⇒        ≈⟨ refl⟩∘⟨ refl⟩∘⟨ pushˡ split₂ˡ ⟩
-    (ρ⇒ ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ λ⇐) ∘ (id ⊗₁ ρ⇒) ∘ α⇒  ≈⟨ refl⟩∘⟨ pullˡ triangle-inv ⟩
-    (ρ⇒ ⊗₁ id) ∘ (ρ⇐ ⊗₁ id) ∘ (id ⊗₁ ρ⇒) ∘ α⇒       ≈⟨ cancelˡ (⊗-cancel unitorʳ.isoʳ identity²) ⟩
-    (id ⊗₁ ρ⇒) ∘ α⇒                                 ≈⟨ coherence₂ ⟩
-    ρ⇒                                              ∎
+    (ρ⇒ ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ σ⇒) ∘ α⇒   ≈⟨ pullˡ (⟺ λ⇒-α⇐) ○ pullˡ merge₂ˡ ⟩
+    (id ⊗₁ (λ⇒ ∘ σ⇒)) ∘ α⇒              ≈⟨ refl⟩⊗⟨ braiding-coherence ⟩∘⟨refl ⟩
+    (id ⊗₁ ρ⇒) ∘ α⇒                     ≈⟨ coherence₂ ⟩
+    ρ⇒                                  ∎
 
   ev-swap : ev {B ⊗₀ X} {X} ≈ (capᵗʳ ⊗₁ id) ∘ swap
   ev-swap = begin
-    ev                                                    ≈⟨ assoc ⟩
-    ρ⇒ ∘ (id ⊗₁ ε) ∘ α⇒                                   ≈˘⟨ pullˡ ρ-φ ⟩
-    (ρ⇒ ⊗₁ id) ∘ φ ∘ (id ⊗₁ ε) ∘ α⇒                       ≈˘⟨ refl⟩∘⟨ extendʳ (⟺ φ-natural) ⟩
-    (ρ⇒ ⊗₁ id) ∘ ((id ⊗₁ ε) ⊗₁ id) ∘ φ ∘ α⇒               ≈⟨ pullˡ merge₁ˡ ⟩
-    (cap-closeʳ ε ⊗₁ id) ∘ φ ∘ α⇒                         ≈⟨ refl⟩∘⟨ φ-fuse ⟩
-    (cap-closeʳ ε ⊗₁ id) ∘ (α⇒ ⊗₁ id) ∘ φ ∘ (φ ⊗₁ id)     ≈⟨ pullˡ merge₁ˡ ⟩
-    (ev ⊗₁ id) ∘ φ ∘ (φ ⊗₁ id)                             ≈˘⟨ capᵗʳ-φ ⟩⊗⟨refl ⟩∘⟨refl ⟩
-    ((capᵗʳ ∘ φ) ⊗₁ id) ∘ φ ∘ (φ ⊗₁ id)                   ≈˘⟨ pullˡ merge₁ˡ ⟩
-    (capᵗʳ ⊗₁ id) ∘ swap                                  ∎
+    ev                                                  ≈⟨ assoc ○ ⟺ (pullˡ ρ-φ) ⟩
+    (ρ⇒ ⊗₁ id) ∘ φ ∘ (id ⊗₁ ε) ∘ α⇒                     ≈˘⟨ refl⟩∘⟨ extendʳ (⟺ φ-natural) ⟩
+    (ρ⇒ ⊗₁ id) ∘ ((id ⊗₁ ε) ⊗₁ id) ∘ φ ∘ α⇒             ≈⟨ pullˡ merge₁ˡ ⟩
+    (cap-closeʳ ε ⊗₁ id) ∘ φ ∘ α⇒                       ≈⟨ refl⟩∘⟨ φ-fuse ⟩
+    (cap-closeʳ ε ⊗₁ id) ∘ (α⇒ ⊗₁ id) ∘ φ ∘ (φ ⊗₁ id)   ≈⟨ pullˡ merge₁ˡ ⟩
+    (ev ⊗₁ id) ∘ φ ∘ (φ ⊗₁ id)                          ≈˘⟨ capᵗʳ-φ ⟩⊗⟨refl ⟩∘⟨refl ⟩
+    ((capᵗʳ ∘ φ) ⊗₁ id) ∘ φ ∘ (φ ⊗₁ id)                 ≈˘⟨ pullˡ merge₁ˡ ⟩
+    (capᵗʳ ⊗₁ id) ∘ swap                                ∎
 
 ----------------------------------------------------------------------------
 -- `Tr` is *any* operation satisfying the JSV axioms *at the traced object `W`* —
@@ -529,8 +503,7 @@ module UniqueAt {W : Obj}
     Tr ((φ ⊗₁ id) ∘ φ ∘ (φ ⊗₁ id))  ≈⟨ tightenₗ ⟩
     φ ∘ Tr (φ ∘ (φ ⊗₁ id))          ≈⟨ refl⟩∘⟨ tightenᵣ ⟩
     φ ∘ Tr │⟦ σ⇒ ⟧ ∘ φ              ≈⟨ refl⟩∘⟨ superposing ⟩∘⟨refl ⟩
-    φ ∘ (id ⊗₁ Tr σ⇒) ∘ φ           ≈⟨ elim-center (whisker-id yanking) ⟩
-    φ ∘ φ                           ≈⟨ φ-inv ⟩
+    φ ∘ (id ⊗₁ Tr σ⇒) ∘ φ           ≈⟨ elim-center (⊗-identityʳ yanking) ○ φ-inv ⟩
     id                              ∎
 
   -- Hence the trace of `ev` is `capᵗʳ` — for *any* trace.
@@ -582,43 +555,35 @@ module TensorTrace {X Y : Obj} where
     Tr ((f ⊗₁ id) ∘ h) ≈ f ∘ Tr h
   Tr-tightenₗ {f = f} {h} = begin
     Tr ((f ⊗₁ id) ∘ h)                            ≈⟨ trace²⟨ rebracket-tightenˡ ⟩ ⟩
-    trace (trace (((f ⊗₁ id) ⊗₁ id) ∘ ⇐[ h ]⇒))   ≈⟨ trace⟨ tightenₗ ⟩ ⟩
-    trace ((f ⊗₁ id) ∘ trace ⇐[ h ]⇒)             ≈⟨ tightenₗ ⟩
+    trace (trace (((f ⊗₁ id) ⊗₁ id) ∘ ⇐[ h ]⇒))   ≈⟨ trace⟨ tightenₗ ⟩ ○ tightenₗ ⟩
     f ∘ Tr h                                      ∎
 
   Tr-tightenᵣ : {h : B ⊗₀ (X ⊗₀ Y) ⇒ C ⊗₀ (X ⊗₀ Y)} {g : A ⇒ B} →
     Tr (h ∘ (g ⊗₁ id)) ≈ Tr h ∘ g
   Tr-tightenᵣ {h = h} {g} = begin
     Tr (h ∘ (g ⊗₁ id))                            ≈⟨ trace²⟨ rebracket-tightenʳ ⟩ ⟩
-    trace (trace (⇐[ h ]⇒ ∘ ((g ⊗₁ id) ⊗₁ id)))   ≈⟨ trace⟨ tightenᵣ ⟩ ⟩
-    trace (trace ⇐[ h ]⇒ ∘ (g ⊗₁ id))             ≈⟨ tightenᵣ ⟩
+    trace (trace (⇐[ h ]⇒ ∘ ((g ⊗₁ id) ⊗₁ id)))   ≈⟨ trace⟨ tightenᵣ ⟩ ○ tightenᵣ ⟩
     Tr h ∘ g                                      ∎
 
   -- Two nested reassociations expose a `Z`-superposed `⇐[ h ]⇒`.
-  rebracket-superposing : {h : A ⊗₀ (X ⊗₀ Y) ⇒ B ⊗₀ (X ⊗₀ Y)} →
+  ⇐[superposing]⇒ : {h : A ⊗₀ (X ⊗₀ Y) ⇒ B ⊗₀ (X ⊗₀ Y)} →
     ⇐[ α⇐ ∘ (id {Z} ⊗₁ h) ∘ α⇒ ]⇒
     ≈ (α⇐ ⊗₁ id) ∘ │⟦ ⇐[ h ]⇒ ⟧ ∘ (α⇒ ⊗₁ id)
-  rebracket-superposing {h = h} = begin
-    α⇐ ∘ (α⇐ ∘ (id ⊗₁ h) ∘ α⇒) ∘ α⇒              ≈⟨ refl⟩∘⟨ assoc²βε ⟩
-    α⇐ ∘ α⇐ ∘ (id ⊗₁ h) ∘ α⇒ ∘ α⇒                ≈⟨ assoc²εα ⟩
-    ((α⇐ ∘ α⇐) ∘ (id ⊗₁ h)) ∘ α⇒ ∘ α⇒            ≈˘⟨ refl⟩∘⟨ pentagon ⟩
-    ((α⇐ ∘ α⇐) ∘ (id ⊗₁ h)) ∘ (id ⊗₁ α⇒) ∘ α⇒ ∘ (α⇒ ⊗₁ id)
-      ≈⟨ center merge₂ˡ ⟩
-    (α⇐ ∘ α⇐) ∘ (id ⊗₁ (h ∘ α⇒)) ∘ α⇒ ∘ (α⇒ ⊗₁ id)
-      ≈⟨ pushˡ (⟺ pentagon-inv) ⟩
-    ((α⇐ ⊗₁ id) ∘ α⇐) ∘ (id ⊗₁ α⇐) ∘ (id ⊗₁ (h ∘ α⇒)) ∘ α⇒ ∘ (α⇒ ⊗₁ id)
-      ≈⟨ pull-center merge₂ˡ ⟩
-    ((α⇐ ⊗₁ id) ∘ α⇐) ∘ (id ⊗₁ (α⇐ ∘ h ∘ α⇒)) ∘ α⇒ ∘ (α⇒ ⊗₁ id)
-      ≈⟨ assoc ⟩
-    (α⇐ ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ (α⇐ ∘ h ∘ α⇒)) ∘ α⇒ ∘ (α⇒ ⊗₁ id)
-      ≈⟨ refl⟩∘⟨ assoc²εβ ⟩
-    (α⇐ ⊗₁ id) ∘ │⟦ ⇐[ h ]⇒ ⟧ ∘ (α⇒ ⊗₁ id)  ∎
+  ⇐[superposing]⇒ {h = h} = begin
+    α⇐ ∘ (α⇐ ∘ (id ⊗₁ h) ∘ α⇒) ∘ α⇒                                     ≈⟨ refl⟩∘⟨ assoc²βε ⟩
+    α⇐ ∘ α⇐ ∘ (id ⊗₁ h) ∘ α⇒ ∘ α⇒                                       ≈⟨ assoc²εα ⟩
+    ((α⇐ ∘ α⇐) ∘ (id ⊗₁ h)) ∘ α⇒ ∘ α⇒                                   ≈˘⟨ refl⟩∘⟨ pentagon ⟩
+    ((α⇐ ∘ α⇐) ∘ (id ⊗₁ h)) ∘ (id ⊗₁ α⇒) ∘ α⇒ ∘ (α⇒ ⊗₁ id)              ≈⟨ center merge₂ˡ ⟩
+    (α⇐ ∘ α⇐) ∘ (id ⊗₁ (h ∘ α⇒)) ∘ α⇒ ∘ (α⇒ ⊗₁ id)                      ≈⟨ pushˡ (⟺ pentagon-inv) ⟩
+    ((α⇐ ⊗₁ id) ∘ α⇐) ∘ (id ⊗₁ α⇐) ∘ (id ⊗₁ (h ∘ α⇒)) ∘ α⇒ ∘ (α⇒ ⊗₁ id) ≈⟨ pull-center merge₂ˡ ⟩
+    ((α⇐ ⊗₁ id) ∘ α⇐) ∘ (id ⊗₁ (α⇐ ∘ h ∘ α⇒)) ∘ α⇒ ∘ (α⇒ ⊗₁ id)         ≈⟨ pullʳ assoc²εβ ⟩
+    (α⇐ ⊗₁ id) ∘ │⟦ ⇐[ h ]⇒ ⟧ ∘ (α⇒ ⊗₁ id)                              ∎
 
   -- Superposing: a wire `Z` beside both loops slides out.
   Tr-superposing : {h : A ⊗₀ (X ⊗₀ Y) ⇒ B ⊗₀ (X ⊗₀ Y)} →
     Tr (α⇐ ∘ (id {Z} ⊗₁ h) ∘ α⇒) ≈ id ⊗₁ Tr h
   Tr-superposing {h = h} = begin
-    Tr (α⇐ ∘ (id ⊗₁ h) ∘ α⇒)                               ≈⟨ trace²⟨ rebracket-superposing ⟩ ⟩
+    Tr (α⇐ ∘ (id ⊗₁ h) ∘ α⇒)                                ≈⟨ trace²⟨ ⇐[superposing]⇒ ⟩ ⟩
     trace (trace ((α⇐ ⊗₁ id) ∘ │⟦ ⇐[ h ]⇒ ⟧ ∘ (α⇒ ⊗₁ id)))  ≈⟨ trace⟨ tightenₗ ⟩ ⟩
     trace (α⇐ ∘ trace (│⟦ ⇐[ h ]⇒ ⟧ ∘ (α⇒ ⊗₁ id)))          ≈⟨ trace⟨ refl⟩∘⟨ tightenᵣ ⟩ ⟩
     trace (α⇐ ∘ trace │⟦ ⇐[ h ]⇒ ⟧ ∘ α⇒)                    ≈⟨ trace⟨ refl⟩∘⟨ superposing ⟩∘⟨refl ⟩ ⟩
@@ -627,45 +592,39 @@ module TensorTrace {X Y : Obj} where
 
   -- `σ_{X⊗Y,X⊗Y}` peeled by `hexagon₁` into a `Y`-braiding above an `X`-braiding — the
   -- latter whiskered by `id {Y}`, re-associated to the outside for `tightenᵣ`.
-  rebracket-σ : ⇐[ σ⇒ {X ⊗₀ Y} {X ⊗₀ Y} ]⇒
+  ⇐[σ]⇒ : ⇐[ σ⇒ {X ⊗₀ Y} {X ⊗₀ Y} ]⇒
         ≈ (α⇐ ∘ α⇐ ∘ (id ⊗₁ σ⇒ {X ⊗₀ Y} {Y}) ∘ α⇒) ∘ (σ⇒ {X ⊗₀ Y} {X} ⊗₁ id)
-  rebracket-σ = begin
-    α⇐ ∘ σ⇒ ∘ α⇒                              ≈˘⟨ refl⟩∘⟨ cancelˡ associator.isoˡ ⟩
+  ⇐[σ]⇒ = begin
+    α⇐ ∘ σ⇒ ∘ α⇒                              ≈⟨ refl⟩∘⟨ insertˡ associator.isoˡ ⟩
     α⇐ ∘ α⇐ ∘ α⇒ ∘ σ⇒ ∘ α⇒                    ≈˘⟨ refl⟩∘⟨ refl⟩∘⟨ hexagon₁ ⟩
-    α⇐ ∘ α⇐ ∘ (id ⊗₁ σ⇒) ∘ α⇒ ∘ (σ⇒ ⊗₁ id)    ≈⟨ refl⟩∘⟨ assoc²εβ ⟩
-    α⇐ ∘ (α⇐ ∘ (id ⊗₁ σ⇒) ∘ α⇒) ∘ (σ⇒ ⊗₁ id)  ≈⟨ sym-assoc ⟩
+    α⇐ ∘ α⇐ ∘ (id ⊗₁ σ⇒) ∘ α⇒ ∘ (σ⇒ ⊗₁ id)    ≈⟨ pushʳ assoc²εβ ⟩
     (α⇐ ∘ α⇐ ∘ (id ⊗₁ σ⇒) ∘ α⇒) ∘ (σ⇒ ⊗₁ id)  ∎
 
   -- Trace `B` out of `A ⊗₀ B` braided past `B`, leaving `A` braided past `B`
   -- (`hexagon₂` exposes the `σ⇒ {B} {B}` that `superposing`+`yanking` erase).
   trace-σ : trace (α⇐ ∘ σ⇒ {A ⊗₀ B} {B}) ≈ σ⇒ {A} {B}
   trace-σ = begin
-    trace (α⇐ ∘ σ⇒)                             ≈⟨ trace⟨ insertʳ associator.isoˡ ⟩ ⟩
-    trace (((α⇐ ∘ σ⇒) ∘ α⇐) ∘ α⇒)               ≈˘⟨ trace⟨ hexagon₂ ⟩∘⟨refl ⟩ ⟩
-    trace ((((σ⇒ ⊗₁ id) ∘ α⇐) ∘ (id ⊗₁ σ⇒)) ∘ α⇒)
-      ≈⟨ trace⟨ assoc²αε ⟩ ⟩
-    trace ((σ⇒ ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ σ⇒) ∘ α⇒)   ≈⟨ tightenₗ ⟩
-    σ⇒ ∘ trace (α⇐ ∘ (id ⊗₁ σ⇒) ∘ α⇒)           ≈⟨ refl⟩∘⟨ superposing ⟩
-    σ⇒ ∘ id ⊗₁ trace σ⇒                         ≈⟨ elimʳ (whisker-id yanking) ⟩
-    σ⇒                                          ∎
+    trace (α⇐ ∘ σ⇒)                                 ≈⟨ trace⟨ insertʳ associator.isoˡ ⟩ ⟩
+    trace (((α⇐ ∘ σ⇒) ∘ α⇐) ∘ α⇒)                   ≈˘⟨ trace⟨ hexagon₂ ⟩∘⟨refl ⟩ ⟩
+    trace ((((σ⇒ ⊗₁ id) ∘ α⇐) ∘ (id ⊗₁ σ⇒)) ∘ α⇒)   ≈⟨ trace⟨ assoc²αε ⟩ ○ tightenₗ ⟩
+    σ⇒ ∘ trace (α⇐ ∘ (id ⊗₁ σ⇒) ∘ α⇒)               ≈⟨ refl⟩∘⟨ superposing ⟩
+    σ⇒ ∘ id ⊗₁ trace σ⇒                             ≈⟨ elimʳ (⊗-identityʳ yanking) ⟩
+    σ⇒                                              ∎
 
   -- The `Y` trace.  `pentagon-inv` exposes the outer associator; then
   -- `superposing` factors `X` off and `trace-σ` collapses the remaining loop.
   trace-σ-assoc : trace (α⇐ ∘ α⇐ ∘ (id ⊗₁ σ⇒ {X ⊗₀ Y} {Y}) ∘ α⇒) ≈ α⇐ {X} {Y} {X} ∘ (id ⊗₁ σ⇒ {X} {Y})
-  trace-σ-assoc = begin
-    trace (α⇐ ∘ α⇐ ∘ (id ⊗₁ σ⇒) ∘ α⇒)                 ≈⟨ trace⟨ pullˡ (⟺ pentagon-inv) ⟩ ⟩
-    trace ((((α⇐ ⊗₁ id) ∘ α⇐) ∘ (id ⊗₁ α⇐)) ∘ (id ⊗₁ σ⇒) ∘ α⇒)
-      ≈⟨ trace⟨ assoc²αε ⟩ ⟩
-    trace ((α⇐ ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ α⇐) ∘ (id ⊗₁ σ⇒) ∘ α⇒)
-      ≈⟨ trace⟨ refl⟩∘⟨ refl⟩∘⟨ pullˡ merge₂ˡ ⟩ ⟩
-    trace ((α⇐ ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ (α⇐ ∘ σ⇒)) ∘ α⇒)  ≈⟨ tightenₗ ⟩
-    α⇐ ∘ trace (α⇐ ∘ (id ⊗₁ (α⇐ ∘ σ⇒)) ∘ α⇒)          ≈⟨ refl⟩∘⟨ superposing ⟩
-    α⇐ ∘ (id ⊗₁ trace (α⇐ ∘ σ⇒))                      ≈⟨ refl⟩∘⟨ refl⟩⊗⟨ trace-σ ⟩
-    α⇐ ∘ (id ⊗₁ σ⇒)                                   ∎
+  trace-σ-assoc = let merge-ασ = refl⟩∘⟨ refl⟩∘⟨ pullˡ merge₂ˡ in begin
+    trace (α⇐ ∘ α⇐ ∘ (id ⊗₁ σ⇒) ∘ α⇒)                           ≈⟨ trace⟨ pullˡ (⟺ pentagon-inv) ⟩ ⟩
+    trace ((((α⇐ ⊗₁ id) ∘ α⇐) ∘ (id ⊗₁ α⇐)) ∘ (id ⊗₁ σ⇒) ∘ α⇒)  ≈⟨ trace⟨ assoc²αε ○ merge-ασ ⟩ ⟩
+    trace ((α⇐ ⊗₁ id) ∘ α⇐ ∘ (id ⊗₁ (α⇐ ∘ σ⇒)) ∘ α⇒)            ≈⟨ tightenₗ ⟩
+    α⇐ ∘ trace (α⇐ ∘ (id ⊗₁ (α⇐ ∘ σ⇒)) ∘ α⇒)                    ≈⟨ refl⟩∘⟨ superposing ⟩
+    α⇐ ∘ (id ⊗₁ trace (α⇐ ∘ σ⇒))                                ≈⟨ refl⟩∘⟨ refl⟩⊗⟨ trace-σ ⟩
+    α⇐ ∘ (id ⊗₁ σ⇒)                                             ∎
 
   Tr-yanking : Tr (σ⇒ {X ⊗₀ Y} {X ⊗₀ Y}) ≈ id
   Tr-yanking = begin
-    trace (trace ⇐[ σ⇒ ]⇒)                                    ≈⟨ trace²⟨ rebracket-σ ⟩ ⟩
+    trace (trace ⇐[ σ⇒ ]⇒)                                    ≈⟨ trace²⟨ ⇐[σ]⇒ ⟩ ⟩
     trace (trace ((α⇐ ∘ α⇐ ∘ (id ⊗₁ σ⇒) ∘ α⇒) ∘ (σ⇒ ⊗₁ id)))  ≈⟨ trace⟨ tightenᵣ ⟩ ⟩
     trace (trace (α⇐ ∘ α⇐ ∘ (id ⊗₁ σ⇒) ∘ α⇒) ∘ σ⇒)            ≈⟨ trace⟨ trace-σ-assoc ⟩∘⟨refl ⟩ ⟩
     trace ((α⇐ ∘ (id ⊗₁ σ⇒)) ∘ σ⇒)                            ≈⟨ trace⟨ extendˡ (⟺ σ⇒-comm) ⟩ ⟩
