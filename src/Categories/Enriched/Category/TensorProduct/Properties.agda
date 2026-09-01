@@ -81,6 +81,7 @@ module Reassociation {v} (𝒜 ℬ 𝒞 : Enriched.Category v) where
         identities : unit ⊗₀ (unit ⊗₀ unit) ⇒
           𝒜.hom A₀ A₀ ⊗₀ (ℬ.hom B₀ B₀ ⊗₀ 𝒞.hom C₀ C₀)
         identities = 𝒜.id ⊗₁ (ℬ.id ⊗₁ 𝒞.id)
+        glue-unit : α⇒ ∘ (((𝒜.id ⊗₁ ℬ.id) ⊗₁ 𝒞.id) ∘ (λ⇐ ⊗₁ id)) ≈ identities ∘ λ⇐
         glue-unit = glue◽◃ assoc-commute-from unit-insertion
         in begin
         α⇒ ∘ ((((𝒜.id ⊗₁ ℬ.id) ∘ λ⇐) ⊗₁ 𝒞.id) ∘ λ⇐)         ≈⟨ refl⟩∘⟨ split₁ʳ ⟩∘⟨refl ⟩
@@ -117,6 +118,9 @@ module Reassociation {v} (𝒜 ℬ 𝒞 : Enriched.Category v) where
                ⊗₀ (𝒞.hom C₁ C₂ ⊗₀ 𝒞.hom C₀ C₁))
              ⇒ (𝒜.hom A₀ A₂ ⊗₀ ℬ.hom B₀ B₂) ⊗₀ 𝒞.hom C₀ C₂
         ⊚³ = (𝒜.⊚ ⊗₁ ℬ.⊚) ⊗₁ 𝒞.⊚
+        glue-interchange : α⇐ ∘
+            ((𝒜.⊚ ⊗₁ (ℬ.⊚ ⊗₁ 𝒞.⊚)) ∘ ((id ⊗₁ i⇒) ∘ i⇒))
+          ≈ ⊚³ ∘ (((i⇒ ⊗₁ id) ∘ i⇒) ∘ (α⇐ ⊗₁ α⇐))
         glue-interchange = glue◽◃ assoc-commute-to interchange-assoc⁻¹
         in begin
         α⇐ ∘ ((𝒜.⊚ ⊗₁ ((ℬ.⊚ ⊗₁ 𝒞.⊚) ∘ i⇒)) ∘ i⇒)          ≈⟨ refl⟩∘⟨ pushˡ split₂ʳ ⟩
