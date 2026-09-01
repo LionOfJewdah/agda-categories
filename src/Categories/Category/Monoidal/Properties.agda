@@ -13,7 +13,7 @@ open Category C
 open M.Monoidal MC
 open import Categories.Category.Monoidal.Utilities MC
 import Categories.Category.Monoidal.Reasoning as MonR
-open import Categories.Category.Construction.Core C as Core using (Core)
+open import Categories.Category.Construction.Core C as Core using (Core; module CoreGroupoid)
 open import Categories.Category.Product using (Product)
 open import Categories.Functor using (Functor)
 open import Categories.Functor.Bifunctor
@@ -65,6 +65,23 @@ X ⊗ᵢ- = appˡ ⊗-iso X
 
 -⊗ᵢ_ : Obj → Functor Core Core
 -⊗ᵢ X = appʳ ⊗-iso X
+
+monoidal-Core : M.Monoidal Core
+monoidal-Core = record
+  { ⊗ = ⊗-iso
+  ; unit = unit
+  ; unitorˡ = CoreGroupoid.equiv-obj unitorˡ
+  ; unitorʳ = CoreGroupoid.equiv-obj unitorʳ
+  ; associator = CoreGroupoid.equiv-obj associator
+  ; unitorˡ-commute-from = ⌞ unitorˡ-commute-from ⌟
+  ; unitorˡ-commute-to = ⌞ unitorˡ-commute-to ⌟
+  ; unitorʳ-commute-from = ⌞ unitorʳ-commute-from ⌟
+  ; unitorʳ-commute-to = ⌞ unitorʳ-commute-to ⌟
+  ; assoc-commute-from = ⌞ assoc-commute-from ⌟
+  ; assoc-commute-to = ⌞ assoc-commute-to ⌟
+  ; triangle = ⌞ triangle ⌟
+  ; pentagon = ⌞ pentagon ⌟
+  }
 
 -- Coherence laws due to Mac Lane (1963) that were subsequently proven
 -- admissible by Max Kelly (1964).  See
